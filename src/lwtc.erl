@@ -25,7 +25,6 @@ setup( User, Password ) ->
     ets:new( lwtc, [ set, named_table ] ),
     ets:insert( lwtc, { auth_info, { User, Password } } ).
 
-
 update_friends_timeline() ->
     case grab_jsonified_request( "http://twitter.com/statuses/friends_timeline.json" ) of
 	{ error, _ } ->
@@ -33,7 +32,6 @@ update_friends_timeline() ->
 	HugeFuckingList -> % and holy crap is it big...
 	    [ write_out_friends_status( X ) || X <- HugeFuckingList ]
     end.
-
 
 fl( K, L ) ->
     case lists:keysearch( list_to_binary( K ), 1, L ) of
@@ -78,4 +76,3 @@ headers( User, Pass ) ->
     UP = base64:encode( User ++ ":" ++ Pass ),
     Basic = lists:flatten( io_lib:fwrite( "Basic ~s", [ UP ] ) ),
     [ { "User-Agent", "Dorkpatrol/0.1" }, { "Authorization", Basic } ].
-

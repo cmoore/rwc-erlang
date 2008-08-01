@@ -47,8 +47,6 @@ validate_field( X, Y ) ->
     io:format( "X: ~p Y: ~p~n", [ X, Y ] ),
     ok.
 
-
-
 viewer_handler( A, Px ) ->
     H = A#arg.headers,
     C = H#headers.cookie,
@@ -72,16 +70,21 @@ viewer_handler( A, Px ) ->
 	    { html, Px:page( "viewer.html", lists:merge( TwitterData, IdenticaData ) ) }
     end.
 
-% returns the element value or none for a proplist and key
-lk( Tag, List ) ->
-    case proplists:lookup( Tag, List ) of
-	{ _, Val } ->
-	    Val;
-	none ->
-	    none
-    end.
-
 pull_twitter_data( Session ) ->
-    Tlogin = lk( tlogin, Session ),
-    Tpassword = lk( tpassword, Session ),
-    
+    case proplists:lookup( tlogin, Session ) of
+	{ _, Login } ->
+	    case proplists:lookup( tpassword, Session ) of
+		{ _, Password } ->
+		    lwtc:setup( Login, Password ),
+		    case lwtc:update_friends_timeline() of
+			error ->
+			    { error, something_messed_up };
+			{ ok, Bundle } ->
+			    { ok, reformat_twitter( Bundle ) }
+		    end;
+		_ ->
+		    { error, something }  % TODO - these could use some better explanations.
+	    end;
+	_ ->
+	    { error, something }
+    end.
