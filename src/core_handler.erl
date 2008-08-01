@@ -1,0 +1,39 @@
+
+-module( core_handler ).
+-export( [ out/1 ] ).
+-include( "yaws_api.hrl" ).
+
+out( A ) ->
+    Path = A#arg.appmoddata,
+    case regexp:first_match( Path, ".html$|.css$|.js$|.gif$|.jpg$" ) of
+	{ match, X, Y } ->
+	    Px = pfactory:new( A ),
+	    % I know there's a better way to do this but I couldn't get
+	    % vdirs working in the yaws config.
+	    case string:substr( Path, X, Y ) of
+		".css" ->
+		    { content, "text/css", Px:static( Path ) };
+		".js" ->
+		    { content, "text/javascript", Px:static( Path ) };
+		".gif" ->
+		    { content, "image/gif", Px:static( Path ) };
+		".jpg" ->
+		    { content, "image/jpeg", Px:static( Path ) };
+		".html" ->
+		    { content, "text/html", Px:static( Path ) }
+	    end;
+	nomatch ->
+	    case Path of
+		"" ->
+		    Px = pfactory:new( A ),
+		    { html, Px:page( "index.html" ) };
+		_ ->
+		    case lists:nth( 1, string:tokens( Path, "/" ) ) of
+			"t" ->
+			    t_handler:out( pfactory:new( A ) );
+			_ ->
+			    { redirect, "/" }
+		    end
+	    end
+    end.
+
