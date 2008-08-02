@@ -11,9 +11,22 @@ Version: 1.0
 /*
 Basic Tags
  */
-body { color: #e3e3e3; font: 10px/150% Verdana, Arial, Sans-Serif; background-color: #4a525a;}
-a { color: #e3e3e3; text-decoration: none; padding: 2px;}
-a:hover { color: #e3e3e3; background-color:#606870; }
+body {
+    color: #e3e3e3;
+    font: 10px/150% Verdana, Arial, Sans-Serif;
+    background-color: #4a525a;
+}
+a {
+    color: #e3e3e3;
+    text-decoration: none;
+    padding: 2px;
+}
+
+a:hover {
+    color: #e3e3e3;
+    background-color:#606870;
+}
+
 /*
 The End of Basic's
 */

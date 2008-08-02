@@ -33,7 +33,6 @@ start() ->
     crypto:start(),
     inets:start(),
     etinit(),
-    kvs:start(),
     application:start( yaws ),
     GC = yaws_config:make_default_gconf( fals, "" ),
     SC = #sconf{ port = 3000,
@@ -42,6 +41,7 @@ start() ->
 		 docroot = "www",
 		 appmods = [ { "/", core_handler } ]
 		},
+    kvs:start(),
     yaws_api:setconf( GC, [[ SC ]] ).
 
 validate(A, Fields, Fun) ->

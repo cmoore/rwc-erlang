@@ -27,26 +27,22 @@ setup_handler( A, Pf ) ->
 	    { html, Pf:page( "setup.html" ) };
 	'POST' ->
 	    AuthKey = gen_key(),
-	    case dorkinator:validate( A, [ "twitter_login", "twitter_password", "ping_login", "ping_password" ], fun validate_field/2 ) of
-		{ [ Tlogin, Tpassword, Plogin, Ppassword ], _ } ->
-		    Session = #session{ key = AuthKey },
-		    kvs:store( AuthKey, [ { twitter_login, Tlogin }, { twitter_password, Tpassword }, { ping_login, Plogin }, { ping_password, Ppassword } ] ),
-		    [ { html, Pf:page( "qdirect.html" ) }, format_cookie( Session ) ];
-		{ [ Tlogin, Tpassword, [], [] ], _ } ->
-		    Ss = #session{ key = AuthKey},
-		    kvs:store( AuthKey, [ { twitter_login, Tlogin }, { twitter_password ,Tpassword } ] ),
-		    [ { html, Pf:page( "qdirect.html" ) }, format_cookie( Ss ) ];
-		{ [ [], [], Plogin, Ppassword ], _ } ->
-		    kvs:store( AuthKey, [ { ping_login, Plogin }, { ping_password, Ppassword } ] ),
+	    case dorkinator:validate( A, [ "twitter_login", "twitter_password", "identica_login", "identica_password", "ping_login", "ping_password" ], fun validate_field/2 ) of
+		{ [ T_login, T_password, I_login, I_password, P_login, P_password ], [] } ->
+		    kvs:store( AuthKey, [
+					 { twitter_login, T_login },
+					 { twitter_password, T_password },
+					 { identica_login, I_login },
+					 { identica_password, I_password },
+					 { ping_login, P_login },
+					 { ping_password, P_password }
+					] ),
 		    [ { html, Pf:page( "qdirect.html" ) }, format_cookie( #session{ key = AuthKey } ) ];
 		_ ->
-		    { html, Pf:page( "setup.html",
-				     [ { error, "Something went wrong with your input." } ] ) }
-	    end;
-	_ ->
-	    { html, Pf:page( "setup.html", [ { error, "Your input didn't validate for whatever reason." } ] ) }
+		    { html, Pf:page( "viewer.html", [ { error, "Something went horribly wrong." } ] ) }
+	    end
     end.
-
+			
 validate_field( X, Y ) ->
     io:format( "X: ~p Y: ~p~n", [ X, Y ] ),
     ok.
@@ -62,9 +58,14 @@ viewer_handler( A, Px ) ->
 		{ ok, Val } ->
 		    Key = Val#session.key,
 		    case kvs:lookup( Key ) of
-			{ ok, _AuthInfo } ->
+			{ ok, AuthInfo } ->
 			    % We have the login and password that was stored from setup!
-			    { html, Px:page( "viewer.html", [ { error, "Found your login information." } ] ) };
+			    Twitter_data = pull_service_data( [ { service, twitter }, { auth, AuthInfo } ] ),
+			    Identica_data = pull_service_data( [ { service, identica }, { auth, AuthInfo } ] ),
+			    { html, Px:page( "viewer.html", [
+							     { twitter_messages, true },
+							     { twitter, Twitter_data }
+							     ] ) };
 			_ ->
 			    { redirect, "/t/setup" }
 		    end;
@@ -76,3 +77,14 @@ viewer_handler( A, Px ) ->
 gen_key() ->
     Key = crypto:rand_bytes( 20 ),
     base64:encode( binary_to_list( Key ) ).
+
+pull_service_data( Params ) ->
+    case lists:keysearch( "service", 1, Params ) of
+	{ ok, twitter } ->
+	    % Pull and reparse twitter data.
+	    [ messages, [ { id, "21212" }, { text, "HOnk!" } ] ];
+	{ ok, identica } ->
+	    [ [ { status, { id, "1212" }, { text, "Hello from identica" } } ] ];
+	_ ->
+	    [ [ { status, { id, "8675309" }, { text, "No setup for this service" } } ] ]
+    end.

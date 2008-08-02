@@ -38,9 +38,9 @@ static( File ) ->
 template_args( Params ) ->
     case lists:keysearch( error, 1, Params ) of
 	{ value, { _, _ } } ->
-	    lists:merge( Params, [ { errors, true }, { header, template( "header.html" ) }, { footer, template( "footer.html" ) } ] );
+	    lists:merge( Params, [ { has_errors, true }, { header, template( "header.html" ) }, { footer, template( "footer.html" ) } ] );
 	_ ->
-	    lists:merge( Params, [ { errors, false }, { header, template( "header.html" ) }, { footer, template( "footer.html" ) } ] )
+	    lists:merge( Params, [ { has_errors, false }, { header, template( "header.html" ) }, { footer, template( "footer.html" ) } ] )
     end.
 
 server_args() ->
