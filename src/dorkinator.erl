@@ -33,6 +33,7 @@ start() ->
     crypto:start(),
     inets:start(),
     etinit(),
+    kvs:start(),
     application:start( yaws ),
     GC = yaws_config:make_default_gconf( fals, "" ),
     SC = #sconf{ port = 3000,

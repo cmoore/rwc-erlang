@@ -16,48 +16,40 @@
 %
 
 -module( lwtc ).
--export( [ setup/2, update_friends_timeline/0 ] ).
+-export( [
+	  setup/1,
+	  friends_timeline/0
+	 ] ).
 
 -author( "Clint Moore <hydo@mac.com>" ).
--version( "0.1" ).
+-version( "0.2" ).
 
-setup( User, Password ) ->
-    ets:new( lwtc, [ set, named_table ] ),
-    ets:insert( lwtc, { auth_info, { User, Password } } ).
+setup( AuthInfo ) ->
+    case AuthInfo of
+	[ { login, Login, password, Password, mode, "twitter" } ] ->
+	    kvs:store( Login, [ { login, Login }, { password, Password }, { service, twitter } ] );
+	[ { login, Login, password, Password, mode, "identi.ca" } ] ->
+	    kvs:store( Login, [ { password, Password }, { service, identica } ] );
+	[ { login, Login, password, Password } ] -> % default to twitter.
+	    kvs:store( Login, [ { password, Password }, { service, twitter } ] );
+	_ ->
+	    false
+    end.
 
-update_friends_timeline() ->
-    case grab_jsonified_request( "http://twitter.com/statuses/friends_timeline.json" ) of
+friends_timeline() ->
+    case json_request( "http://twitter.com/statuses/friends_timeline.json" ) of
 	{ error, _ } ->
 	    error;
-	HugeFuckingList -> % and holy crap is it big...
-	    [ write_out_friends_status( X ) || X <- HugeFuckingList ]
-    end.
-
-fl( K, L ) ->
-    case lists:keysearch( list_to_binary( K ), 1, L ) of
-	{ value, { _Key, Val } } ->
-	    Val;
-	_ ->
-	    false
-    end.
-
-write_out_friends_status( Element ) ->
-    case Element of
-	{ status, List } ->
-	    io:format( "Screen Name: ~p~n", [ lists:keysearch(list_to_binary( "screen_name" ), 2, List ) ] );
-	%    ets:insert( lwtc, { fl("id",List),
-	%			{ name, fl("name",List) },
-	%			{ screen_name, fl("screen_name",List) },
-	%			{ text, fl("text",List) },
-	%			{ reply_to, fl("in_reply_to_status_id",List) } } );
-	_ ->
-	    false
+	[] ->
+	    error;
+	Data ->
+	    Data
     end.
 
 %
 % Simplified url to json helpers.
 %
-grab_jsonified_request( Url ) ->
+json_request( Url ) ->
     case ets:lookup( lwtc, auth_info ) of
 	[ { auth_info, { Login, Password } } ] ->
 	    case http_auth_request( Url, Login, Password ) of
@@ -76,3 +68,4 @@ headers( User, Pass ) ->
     UP = base64:encode( User ++ ":" ++ Pass ),
     Basic = lists:flatten( io_lib:fwrite( "Basic ~s", [ UP ] ) ),
     [ { "User-Agent", "Dorkpatrol/0.1" }, { "Authorization", Basic } ].
+

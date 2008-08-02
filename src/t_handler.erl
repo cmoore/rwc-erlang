@@ -26,15 +26,19 @@ setup_handler( A, Pf ) ->
 	'GET' ->
 	    { html, Pf:page( "setup.html" ) };
 	'POST' ->
+	    AuthKey = gen_key(),
 	    case dorkinator:validate( A, [ "twitter_login", "twitter_password", "ping_login", "ping_password" ], fun validate_field/2 ) of
 		{ [ Tlogin, Tpassword, Plogin, Ppassword ], _ } ->
-		    Session = #session{ tlogin = Tlogin, tpassword = Tpassword, plogin = Plogin, ppassword = Ppassword },
+		    Session = #session{ key = AuthKey },
+		    kvs:store( AuthKey, [ { twitter_login, Tlogin }, { twitter_password, Tpassword }, { ping_login, Plogin }, { ping_password, Ppassword } ] ),
 		    [ { html, Pf:page( "qdirect.html" ) }, format_cookie( Session ) ];
 		{ [ Tlogin, Tpassword, [], [] ], _ } ->
-		    Ss = #session{ tlogin = Tlogin, tpassword = Tpassword },
+		    Ss = #session{ key = AuthKey},
+		    kvs:store( AuthKey, [ { twitter_login, Tlogin }, { twitter_password ,Tpassword } ] ),
 		    [ { html, Pf:page( "qdirect.html" ) }, format_cookie( Ss ) ];
 		{ [ [], [], Plogin, Ppassword ], _ } ->
-		    [ { html, Pf:page( "qdirect.html" ) }, format_cookie( #session{ plogin = Plogin, ppassword = Ppassword } ) ];
+		    kvs:store( AuthKey, [ { ping_login, Plogin }, { ping_password, Ppassword } ] ),
+		    [ { html, Pf:page( "qdirect.html" ) }, format_cookie( #session{ key = AuthKey } ) ];
 		_ ->
 		    { html, Pf:page( "setup.html",
 				     [ { error, "Something went wrong with your input." } ] ) }
@@ -52,39 +56,23 @@ viewer_handler( A, Px ) ->
     C = H#headers.cookie,
     case yaws_api:find_cookie_val( "dorkinator", C ) of
 	[] ->
-	    { html, Px:page( "viewer.html", [ { error, "Can't find any auth info.  Click setup above." } ] ) };
+	    { redirect, "/t/setup" };
 	Cookie ->
-	    { ok, Session } = yaws_api:cookieval_to_opaque( Cookie ),
-	    TwitterData = case pull_twitter_data( Session ) of
-			      { ok, Bundle } ->
-				  [ { twitter, true }, { twitter_data, Bundle } ];
-			      { error, _ } ->
-				  [ { twitter, false } ]
-			  end,
-	    IdenticaData = case pull_identica_data( Session ) of
-			       { ok, Bundle } ->
-				   [ { identica, true }, { identica_data, Bundle } ];
-			       { error, _ } ->
-				   [ { identica, false } ]
-			   end,
-	    { html, Px:page( "viewer.html", lists:merge( TwitterData, IdenticaData ) ) }
+	    case yaws_api:cookieval_to_opaque( Cookie ) of
+		{ ok, Val } ->
+		    Key = Val#session.key,
+		    case kvs:lookup( Key ) of
+			{ ok, _AuthInfo } ->
+			    % We have the login and password that was stored from setup!
+			    { html, Px:page( "viewer.html", [ { error, "Found your login information." } ] ) };
+			_ ->
+			    { redirect, "/t/setup" }
+		    end;
+		{ error, no_session } ->
+		    { redirect, "/t/setup" }
+	    end
     end.
 
-pull_twitter_data( Session ) ->
-    case proplists:lookup( tlogin, Session ) of
-	{ _, Login } ->
-	    case proplists:lookup( tpassword, Session ) of
-		{ _, Password } ->
-		    lwtc:setup( Login, Password ),
-		    case lwtc:update_friends_timeline() of
-			error ->
-			    { error, something_messed_up };
-			{ ok, Bundle } ->
-			    { ok, reformat_twitter( Bundle ) }
-		    end;
-		_ ->
-		    { error, something }  % TODO - these could use some better explanations.
-	    end;
-	_ ->
-	    { error, something }
-    end.
+gen_key() ->
+    Key = crypto:rand_bytes( 20 ),
+    base64:encode( binary_to_list( Key ) ).

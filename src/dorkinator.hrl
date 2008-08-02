@@ -1,2 +1,2 @@
 
--record( session, { tlogin, tpassword, plogin, ppassword } ).
+-record( session, { key } ).
