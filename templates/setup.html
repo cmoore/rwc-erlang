@@ -1,4 +1,4 @@
-$include header$
+{% include "header.html" %}
 <form action="/t/setup" method="POST">
   <table>
     <tr><td>Twitter Login</td><td><input type="text" name="twitter_login"></td></tr>
@@ -13,4 +13,5 @@ $include header$
     <tr><td colspan=2><input type="submit" value="Save"></td></tr>
   </table>
 </form>
-$include footer$
+{% include "footer.html" %}
+

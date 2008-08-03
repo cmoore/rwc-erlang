@@ -26,7 +26,7 @@ out( A ) ->
 	    case Path of
 		"" ->
 		    Px = pfactory:new( A ),
-		    { html, Px:page( "setup.html" ) };
+		    { html, Px:page( "setup" ) };
 		_ ->
 		    case lists:nth( 1, string:tokens( Path, "/" ) ) of
 			"t" ->

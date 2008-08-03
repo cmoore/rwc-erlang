@@ -13,7 +13,7 @@ out( Pf ) ->
 	"t/viewer" ->
 	    viewer_handler( A, Pf );
 	_ ->
-	    { html, Pf:page( "index.html" ) }
+	    { html, Pf:page( "index" ) }
     end.
 
 
@@ -24,7 +24,7 @@ format_cookie( Sx ) ->
 setup_handler( A, Pf ) ->
     case yaws_arg:method( A ) of
 	'GET' ->
-	    { html, Pf:page( "setup.html" ) };
+	    { html, Pf:page( "setup" ) };
 	'POST' ->
 	    AuthKey = gen_key(),
 	    case dorkinator:validate( A, [ "twitter_login", "twitter_password", "identica_login", "identica_password", "ping_login", "ping_password" ], fun validate_field/2 ) of
@@ -37,9 +37,9 @@ setup_handler( A, Pf ) ->
 					 { ping_login, P_login },
 					 { ping_password, P_password }
 					] ),
-		    [ { html, Pf:page( "qdirect.html" ) }, format_cookie( #session{ key = AuthKey } ) ];
+		    [ { html, Pf:page( "qdirect" ) }, format_cookie( #session{ key = AuthKey } ) ];
 		_ ->
-		    { html, Pf:page( "viewer.html", [ { error, "Something went horribly wrong." } ] ) }
+		    { html, Pf:page( "viewer", [ { error, "Something went horribly wrong." } ] ) }
 	    end
     end.
 			
@@ -63,7 +63,7 @@ viewer_handler( A, Px ) ->
 			    Twitter_data = pull_service_data( [ { service, twitter }, { auth, AuthInfo } ] ),
 			    RenderedMessages = render_messages( Twitter_data ),
 			    io:format( "~p~n", [ RenderedMessages ] ),
-			    { html, Px:page( "viewer.html", [ { twitter_messages, true }, { messagedata, RenderedMessages } ] ) };
+			    { html, Px:page( "viewer", [ { twitter_messages, true }, { messagedata, RenderedMessages } ] ) };
 			_ ->
 			    { redirect, "/t/setup" }
 		    end;

@@ -35,7 +35,7 @@ start() ->
     inets:start(),
     etinit(),
     application:start( yaws ),
-    GC = yaws_config:make_default_gconf( fals, "" ),
+    GC = yaws_config:make_default_gconf( false, "" ),
     SC = #sconf{ port = 3000,
 		 servername = "localhost",
 		 listen = { 127,0,0,1 },
@@ -81,12 +81,6 @@ s_find( Login ) ->
 	    false
     end.	
 
-f( String ) ->
-    io:format( "~p~n", [ String ] ).
 build_templates() ->
-    f( "Header" ),
-    erlydtl_compiler:compile( "./templates/header.html", "header", [ { out_dir, "./ebin" } ] ),
-    f( "Footer" ),
-    erlydtl_compiler:compile( "./templates/footer.html", "footer", [ { out_dir, "./ebin" } ] ),
-    f( "Index" ),
-    erlydtl_compiler:compile( "./templates/index.html", "index", [ { out_dir, "./ebin" } ] ).
+    TemplateList = [ "header", "footer", "index", "catastrophic","setup", "qdirect", "viewer" ],
+    [ erlydtl_compiler:compile( "./templates/" ++ X ++ ".html", X, [ { out_dir, "./ebin" } ] ) || X <- TemplateList ].
