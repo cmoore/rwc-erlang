@@ -61,11 +61,9 @@ viewer_handler( A, Px ) ->
 			{ ok, AuthInfo } ->
 			    % We have the login and password that was stored from setup!
 			    Twitter_data = pull_service_data( [ { service, twitter }, { auth, AuthInfo } ] ),
-			    Identica_data = pull_service_data( [ { service, identica }, { auth, AuthInfo } ] ),
-			    { html, Px:page( "viewer.html", [
-							     { twitter_messages, true },
-							     { twitter, Twitter_data }
-							     ] ) };
+			    RenderedMessages = render_messages( Twitter_data ),
+			    io:format( "~p~n", [ RenderedMessages ] ),
+			    { html, Px:page( "viewer.html", [ { twitter_messages, true }, { messagedata, RenderedMessages } ] ) };
 			_ ->
 			    { redirect, "/t/setup" }
 		    end;
@@ -79,12 +77,24 @@ gen_key() ->
     base64:encode( binary_to_list( Key ) ).
 
 pull_service_data( Params ) ->
-    case lists:keysearch( "service", 1, Params ) of
-	{ ok, twitter } ->
+    case lists:keysearch( service, 1, Params ) of
+	{ value, { service, twitter } } ->
 	    % Pull and reparse twitter data.
-	    [ messages, [ { id, "21212" }, { text, "HOnk!" } ] ];
-	{ ok, identica } ->
-	    [ [ { status, { id, "1212" }, { text, "Hello from identica" } } ] ];
+ 	    [
+	     { message, [ { id, "21212" }, { text, "Honk!" } ] },
+	     { message, [ { id, "32232" }, { text, "boorj" } ] }
+	    ];
+	{ value, identica } ->
+	    [ { message, [ { id, "8675309" }, { text, "No auth data for this service!" } ] } ];
 	_ ->
-	    [ [ { status, { id, "8675309" }, { text, "No setup for this service" } } ] ]
+	    [ { message, [ { id, "8675309" }, { text, "No auth data for this service!" } ] } ]
     end.
+
+render_messages( List ) ->
+    Tm = sgte:compile_file( "./templates/message.html" ),
+    render_list( Tm, List ).
+
+render_list( Tm, [ Message | Rest ] ) ->
+    sgte:render( Tm, Message ) ++ render_list( Tm, Rest );
+render_list( _Tm, [] ) ->
+    "".

@@ -1,3 +1,0 @@
-{packages,[]}.
-{modules,[sgte,sgte_dict,sgte_gettext,sgte_parse,
-          sgte_render]}.

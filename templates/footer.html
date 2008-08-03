@@ -1,11 +1,11 @@
 
-$if has_errors$
+{% if has_errors %}
 <br/>
 <br/>
 <span style="padding:4px;background:white;color:red">
-  <b>Error: $error$</b>
+  <b>Error: {{ error }}</b>
 </div>
-$end if$
+{% endif %}
 
     </div>
   </body>

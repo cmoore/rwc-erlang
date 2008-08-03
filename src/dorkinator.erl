@@ -7,7 +7,8 @@
 	  halt/0,
 	  s_init/0,
 	  s_store/2,
-	  s_find/1
+	  s_find/1,
+	  build_templates/0
 	 ] ).
 
 -include( "/usr/local/lib/yaws/include/yaws.hrl" ).
@@ -42,6 +43,8 @@ start() ->
 		 appmods = [ { "/", core_handler } ]
 		},
     kvs:start(),
+    erlydtl:create_parser(),
+    build_templates(),
     yaws_api:setconf( GC, [[ SC ]] ).
 
 validate(A, Fields, Fun) ->
@@ -77,3 +80,13 @@ s_find( Login ) ->
 	_ ->
 	    false
     end.	
+
+f( String ) ->
+    io:format( "~p~n", [ String ] ).
+build_templates() ->
+    f( "Header" ),
+    erlydtl_compiler:compile( "./templates/header.html", "header", [ { out_dir, "./ebin" } ] ),
+    f( "Footer" ),
+    erlydtl_compiler:compile( "./templates/footer.html", "footer", [ { out_dir, "./ebin" } ] ),
+    f( "Index" ),
+    erlydtl_compiler:compile( "./templates/index.html", "index", [ { out_dir, "./ebin" } ] ).
