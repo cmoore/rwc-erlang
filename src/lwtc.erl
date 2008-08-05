@@ -18,7 +18,7 @@
 -module( lwtc ).
 -export( [
 	  setup/1,
-	  friends_timeline/0
+	  friends_timeline/1
 	 ] ).
 
 -author( "Clint Moore <hydo@mac.com>" ).
@@ -26,18 +26,18 @@
 
 setup( AuthInfo ) ->
     case AuthInfo of
-	[ { login, Login, password, Password, mode, "twitter" } ] ->
+	[ { login, Login }, { password, Password }, { mode, twitter } ] ->
 	    kvs:store( Login, [ { login, Login }, { password, Password }, { service, twitter } ] );
-	[ { login, Login, password, Password, mode, "identi.ca" } ] ->
+	[ { login, Login }, { password, Password }, { mode, identica } ] ->
 	    kvs:store( Login, [ { password, Password }, { service, identica } ] );
-	[ { login, Login, password, Password } ] -> % default to twitter.
+	[ { login, Login }, { password, Password } ] -> % default to twitter.
 	    kvs:store( Login, [ { password, Password }, { service, twitter } ] );
 	_ ->
 	    false
     end.
 
-friends_timeline() ->
-    case json_request( "http://twitter.com/statuses/friends_timeline.json" ) of
+friends_timeline( Login ) ->
+    case json_request( Login, "http://twitter.com/statuses/friends_timeline.json" ) of
 	{ error, _ } ->
 	    error;
 	[] ->
@@ -49,9 +49,9 @@ friends_timeline() ->
 %
 % Simplified url to json helpers.
 %
-json_request( Url ) ->
-    case ets:lookup( lwtc, auth_info ) of
-	[ { auth_info, { Login, Password } } ] ->
+json_request( Login, Url ) ->
+    case kvs:lookup( Login ) of
+	{ ok, [ { login, Login }, { password, Password }, { _, _ } ] } ->
 	    case http_auth_request( Url, Login, Password ) of
 		{ ok, { _, _, Result } } ->
 		    mochijson2:decode( Result );
@@ -68,4 +68,3 @@ headers( User, Pass ) ->
     UP = base64:encode( User ++ ":" ++ Pass ),
     Basic = lists:flatten( io_lib:fwrite( "Basic ~s", [ UP ] ) ),
     [ { "User-Agent", "Dorkpatrol/0.1" }, { "Authorization", Basic } ].
-

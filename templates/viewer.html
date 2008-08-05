@@ -1,4 +1,4 @@
-$include header$
+{% include "header.html" %}
 
 Oh snap!
 <br/>
@@ -7,10 +7,17 @@ Oh snap!
 <!-- $if twitter_messages$ -->
 <div style="background:white;width:100%;color:black;padding:1px;position:relative;">
   <div style="background:#606870;color:white;padding:10px;align:center;">
-    $messagedata$
+    {% if twitter_messages %}
+    {% for e in tmessages %}
+    <div><img src="{{ e.picture }}"> {{ e.name }}<br/>
+      {{ e.text }}
+      </div>
+    {% endfor %}
+    {% endif %}
   </div>
 </div>
 <!-- $end if$ -->
 
-$include footer$
+{% include "footer.html" %}
+
 

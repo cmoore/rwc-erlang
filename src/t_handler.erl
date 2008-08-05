@@ -1,6 +1,6 @@
 
 -module( t_handler ).
--export( [ out/1 ] ).
+-export( [ out/1, reformat_twitter_data/1 ] ).
 -include( "yaws_api.hrl" ).
 -include( "dorkinator.hrl" ).
 
@@ -27,7 +27,15 @@ setup_handler( A, Pf ) ->
 	    { html, Pf:page( "setup" ) };
 	'POST' ->
 	    AuthKey = gen_key(),
-	    case dorkinator:validate( A, [ "twitter_login", "twitter_password", "identica_login", "identica_password", "ping_login", "ping_password" ], fun validate_field/2 ) of
+	    case dorkinator:validate( A, [
+					  "twitter_login",
+					  "twitter_password",
+					  "identica_login",
+					  "identica_password",
+					  "ping_login",
+					  "ping_password"
+					 ], fun validate_field/2 ) of
+
 		{ [ T_login, T_password, I_login, I_password, P_login, P_password ], [] } ->
 		    kvs:store( AuthKey, [
 					 { twitter_login, T_login },
@@ -61,9 +69,7 @@ viewer_handler( A, Px ) ->
 			{ ok, AuthInfo } ->
 			    % We have the login and password that was stored from setup!
 			    Twitter_data = pull_service_data( [ { service, twitter }, { auth, AuthInfo } ] ),
-			    RenderedMessages = render_messages( Twitter_data ),
-			    io:format( "~p~n", [ RenderedMessages ] ),
-			    { html, Px:page( "viewer", [ { twitter_messages, true }, { messagedata, RenderedMessages } ] ) };
+			    { html, Px:page( "viewer", [ { twitter_messages, "1" }, { tmessages, reformat_twitter_data( Twitter_data ) } ] ) };
 			_ ->
 			    { redirect, "/t/setup" }
 		    end;
@@ -79,22 +85,64 @@ gen_key() ->
 pull_service_data( Params ) ->
     case lists:keysearch( service, 1, Params ) of
 	{ value, { service, twitter } } ->
-	    % Pull and reparse twitter data.
- 	    [
-	     { message, [ { id, "21212" }, { text, "Honk!" } ] },
-	     { message, [ { id, "32232" }, { text, "boorj" } ] }
-	    ];
-	{ value, identica } ->
-	    [ { message, [ { id, "8675309" }, { text, "No auth data for this service!" } ] } ];
+	    case lists:keysearch( auth, 1, Params ) of
+		{ value, { auth, AuthInfo } } ->
+		    case lists:keysearch( twitter_login, 1, AuthInfo ) of
+			{ value, { twitter_login, Tlogin } } ->
+			    case lists:keysearch( twitter_password, 1, AuthInfo ) of
+				{ value, { twitter_password, TPassword } } ->
+				    case lwtc:setup( [ { login, Tlogin }, { password, TPassword }, { mode, twitter } ] ) of
+					true ->
+					    lwtc:friends_timeline( Tlogin );
+					false ->
+					    [ { error, "LWTC could not be set up." } ]
+				    end;
+				_ ->
+				    [ { error, "Could not find the twitter password." } ]
+			    end;
+			_ ->
+			    [ { error, "Could not find the twitter login." } ]
+		    end;
+		_ ->
+		    [ { error, "pull_service_data: Could not find the passed auth info!?" } ]
+	    end;
 	_ ->
-	    [ { message, [ { id, "8675309" }, { text, "No auth data for this service!" } ] } ]
+	    [ { error, "You need to specify a service type in setup." } ]
     end.
 
-render_messages( List ) ->
-    Tm = sgte:compile_file( "./templates/message.html" ),
-    render_list( Tm, List ).
+%
+% The mochi json parser returns the keys in binary format
+% so we've got to do some interpretive dance to get erlydtl to like it.
+%
 
-render_list( Tm, [ Message | Rest ] ) ->
-    sgte:render( Tm, Message ) ++ render_list( Tm, Rest );
-render_list( _Tm, [] ) ->
-    "".
+reformat_twitter_data( [] ) ->
+    [];
+reformat_twitter_data( [ Element | Rest ] ) ->
+    case Element of
+	{ struct, List } ->
+	    case lists:keysearch( list_to_binary( "id" ), 1, List ) of
+		{ value, { <<"id">>, Id } } ->
+		    case lists:keysearch( list_to_binary( "text" ), 1, List ) of
+			{ value, { <<"text">>, Text } } ->
+			    lists:append( [[
+					    { id, Id },
+					    { text, Text },
+					    { picture, element_from_user( List, <<"profile_image_url">> ) },
+					    { name, element_from_user( List, <<"name">> ) }
+					   ]], reformat_twitter_data( Rest ))
+		    end
+	    end
+    end.
+
+%
+% This should probably be in lwtc - I'll refactor later, it's late and I want to see it work.
+%
+
+element_from_user( Message, Element ) ->
+    case lists:keysearch( <<"user">>, 1, Message ) of
+	{ value, { <<"user">>, { struct, UserList } } } ->
+	    case lists:keysearch( Element, 1, UserList ) of
+		{ value, { Element, User } } ->
+		    binary_to_list( User )
+	    end
+    end.
