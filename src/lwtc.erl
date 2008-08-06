@@ -8,7 +8,7 @@
 %
 % The MIT License
 %
-% Copyright (c) 2008 Roberto Saccon, Evan Miller
+% Copyright (c) 2008 Clint Moore
 %
 % Permission is hereby granted, free of charge, to any person obtaining a copy
 % of this software and associated documentation files (the "Software"), to deal
@@ -29,13 +29,22 @@
 % THE SOFTWARE.
 %
 %
+% @drivel
+% 
+% I'd like for this to be completely standalone but alas, I have much more faith in
+% Bob Ippolito's ability to write a json parser than my own.  And it's for this 
+% reason that mochijson2.erl is a required dependency.
+%
+% @end
 %
 
 -module( lwtc ).
+
 -export( [ setup/1, request/2 ] ).
 
 -author( "Clint Moore <hydo@mac.com>" ).
--version( "0.2" ).
+
+-version( "0.5" ).
 
 % @spec ( [ 
 %          { login, "login_name" },
@@ -45,18 +54,19 @@
 % @doc sets up the authentication information for future requests.
 % @end
 setup( AuthInfo ) ->
+    is_running(),
     case AuthInfo of
 	[ { login, Login }, { password, Password }, { mode, twitter } ] ->
-	    kvs:store( Login, [ { login, Login }, { password, Password }, { service, twitter } ] );
+	    keyd_store( Login, [ { login, Login }, { password, Password }, { service, twitter } ] );
 	[ { login, Login }, { password, Password }, { mode, identica } ] ->
-	    kvs:store( Login, [ { password, Password }, { service, identica } ] );
+	    keyd_store( Login, [ { password, Password }, { service, identica } ] );
 	[ { login, Login }, { password, Password } ] -> % default to twitter.
-	    kvs:store( Login, [ { password, Password }, { service, twitter } ] );
+	    keyd_store( Login, [ { password, Password }, { service, twitter } ] );
 	_ ->
 	    false
     end.
 
-% @spec ( "login_name", request ) -> List
+% @spec ( "login_name", request ) -> List | { error, reason }
 % @doc
 % performs the requested request.(heh)
 % currently supported request atoms are
@@ -64,22 +74,24 @@ setup( AuthInfo ) ->
 % support for more coming soon.
 % @end
 request( Login, Request ) ->
-    case kvs:lookup( Login ) of
+    case keyd_lookup( Login ) of
 	{ ok, List } ->
 	    case lists:keysearch( service, 1, List ) of
 		{ value, { service, twitter } } ->
 		    Url = head_for_service( twitter ) ++ url_for_action( Request ),
 		    case json_request( Login, Url ) of
-			{ error, _ } ->
-			    error;
+			{ error, Reason } ->
+			    { error, Reason };
 			[] ->
-			    error;
+			    { error, request_error };
 			Data ->
 			    Data
 		    end;
 		_ ->
-		    { error, no_such_service }
-	    end
+		    { error, no_service }
+	    end;
+	_ ->
+	    { error, no_setup_info }
     end.
 
 %
@@ -87,7 +99,7 @@ request( Login, Request ) ->
 %
 
 json_request( Login, Url ) ->
-    case kvs:lookup( Login ) of
+    case keyd_lookup( Login ) of
 	{ ok, [ { login, Login }, { password, Password }, { _, _ } ] } ->
 	    case http_auth_request( Url, Login, Password ) of
 		{ ok, { _, _, Result } } ->
@@ -128,4 +140,53 @@ head_for_service( Service ) ->
 	    "http://identi.ca/api/statuses/";
 	_ ->
 	    { error, no_such_service }
+    end.
+
+%
+% Thank you, erlang-questions for your nifty post archives
+%
+
+is_running() ->
+    case whereis( keyd ) of
+	undefined ->
+	    Parent = self(),
+	    spawn( fun() ->
+			   register( keyd, self() ),
+			   Parent ! { registered, self() },
+			   keyd_loop()
+		   end ),
+	    receive
+		{ registered, P } ->
+		    P
+	    after 5000 ->
+		    whereis( keyd )
+	    end;
+	P ->
+	    P
+    end.
+
+keyd_store( Key, Value ) ->
+    is_running(),
+    rpc( { store, Key, Value } ).
+
+keyd_lookup( Key ) ->
+    is_running(),
+    rpc( { lookup, Key } ).
+
+rpc( Q ) ->
+    keyd ! { self(), Q },
+    receive
+	{ keyd, Reply } ->
+	    Reply
+    end.
+
+keyd_loop() ->
+    receive
+	{ From, { store, Key, Value } } ->
+	    put( Key, { ok, Value } ),
+	    From ! { keyd, true },
+	    keyd_loop();
+	{ From, { lookup, Key } } ->
+	    From ! { keyd, get( Key ) },
+	    keyd_loop()
     end.

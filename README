@@ -1,7 +1,5 @@
 
-This is/will be a twitter and identica aggregator that uses ping.fm to send updates.
-
-There's not a whole lot to see here just yet as everything is in varying states of disarray.
+This is/will be a twitter and identica aggregator that uses ping.fm to send updates.  At the moment though it doesn't work.  But if you are the adventurous type you can ... 
 
 GETTING IT RUNNING -
 
@@ -10,16 +8,3 @@ and src/dorkinator.erl and change the paths.  Also, unless you have yaws install
 /usr/local/lib/yaws, you'll need to edit the Emakefile.  Otherwise you should be able to
 just run ./start.sh and open a browser to localhost:3000.  Reports on the success or 
 failure of this are welcomed.
-
-TODO - A definitely incomplete list
-
-- lwtc needs to be refactored to take a mode setting depending on if the caller is trying
-to talk to identi.ca or twitter.
-
-- the validation code in the handlers for POST actions needs to actually validate.  It
-doesn't at the moment for testing.
-
-- lwtc needs to spawn a process to hold l/p information instead of putting it into ETS.
-that or something else that would make me feel better about giving it my login credentials
-if it were someone elses project running on someone else's machine.
-
