@@ -9,27 +9,27 @@ static( File ) ->
     Contents.
 
 % spage = string page.
-% pass in a string and get back a rendered template.	    
+% pass in a string and get back a rendered template.        
 page( String ) ->
     page( String, [] ).
 
 page( String, Obj ) ->
     Tatom = list_to_atom( String ),
     case Tatom:render( template_args( Obj ) ) of
-	{ has_errors, false } ->
-	    page( "catastrophic" );
-	{ ok, Content } ->
-	    Content;
-	_ ->
-	    ""
+        { has_errors, false } ->
+            page( "catastrophic" );
+        { ok, Content } ->
+            Content;
+        _ ->
+            ""
     end.
 
 template_args( Params ) ->
     case lists:keysearch( error, 1, Params ) of
-	{ value, { _, _ } } ->
-	    lists:merge( Params, [ { has_errors, true } ] );
-	_ ->
-	    lists:merge( Params, [ { has_errors, false } ] )
+        { value, { _, _ } } ->
+            lists:merge( Params, [ { has_errors, true } ] );
+        _ ->
+            lists:merge( Params, [ { has_errors, false } ] )
     end.
 
 server_args() ->

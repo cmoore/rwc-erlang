@@ -56,14 +56,14 @@
 setup( AuthInfo ) ->
     is_running(),
     case AuthInfo of
-	[ { login, Login }, { password, Password }, { mode, twitter } ] ->
-	    keyd_store( Login, [ { login, Login }, { password, Password }, { service, twitter } ] );
-	[ { login, Login }, { password, Password }, { mode, identica } ] ->
-	    keyd_store( Login, [ { password, Password }, { service, identica } ] );
-	[ { login, Login }, { password, Password } ] -> % default to twitter.
-	    keyd_store( Login, [ { password, Password }, { service, twitter } ] );
-	_ ->
-	    false
+        [ { login, Login }, { password, Password }, { mode, twitter } ] ->
+            keyd_store( Login, [ { login, Login }, { password, Password }, { service, twitter } ] );
+        [ { login, Login }, { password, Password }, { mode, identica } ] ->
+            keyd_store( Login, [ { password, Password }, { service, identica } ] );
+        [ { login, Login }, { password, Password } ] -> % default to twitter.
+            keyd_store( Login, [ { password, Password }, { service, twitter } ] );
+        _ ->
+            false
     end.
 
 % @spec ( "login_name", request ) -> List | { error, reason }
@@ -75,28 +75,28 @@ setup( AuthInfo ) ->
 % @end
 request( Login, Request ) ->
     case keyd_lookup( Login ) of
-	{ ok, List } ->
-	    case lists:keysearch( service, 1, List ) of
-		{ value, { service, Service } } ->
-		    Url = head_for_service( Service ) ++ url_for_action( Request ),
-		    case lists:keysearch( password, 1, List ) of
-			{ value, { password, Password } } ->
-			    case json_request( Login, Password, Url ) of
-				{ error, Reason } ->
-				    { error, Reason };
-				[] ->
-				    { error, request_error };
-				Data ->
-				    Data
-			    end;
-			_ ->
-			    { error, no_password_set }
-		    end;
-		_ ->
-		    { error, no_service }
-	    end;
-	_ ->
-	    { error, no_setup_info }
+        { ok, List } ->
+            case lists:keysearch( service, 1, List ) of
+                { value, { service, Service } } ->
+                    Url = head_for_service( Service ) ++ url_for_action( Request ),
+                    case lists:keysearch( password, 1, List ) of
+                        { value, { password, Password } } ->
+                            case json_request( Login, Password, Url ) of
+                                { error, Reason } ->
+                                    { error, Reason };
+                                [] ->
+                                    { error, request_error };
+                                Data ->
+                                    Data
+                            end;
+                        _ ->
+                            { error, no_password_set }
+                    end;
+                _ ->
+                    { error, no_service }
+            end;
+        _ ->
+            { error, no_setup_info }
     end.
 
 %
@@ -105,14 +105,15 @@ request( Login, Request ) ->
 
 json_request( Login, Password, Url ) ->
     case http_auth_request( Url, Login, Password ) of
-	{ ok, { _, _, Result } } ->
-	    mochijson2:decode( Result );
-	_ ->
-	    { error, bad_result_from_http_request }
+        { ok, { _, _, Result } } ->
+            mochijson2:decode( Result );
+        _ ->
+            { error, bad_result_from_http_request }
     end.
 
 http_auth_request( Url, User, Pass ) ->
     http:request( get, { Url, headers( User, Pass ) }, [], [] ).
+
 headers( User, Pass ) ->
     UP = base64:encode( User ++ ":" ++ Pass ),
     Basic = lists:flatten( io_lib:fwrite( "Basic ~s", [ UP ] ) ),
@@ -120,26 +121,26 @@ headers( User, Pass ) ->
 
 url_for_action( Action ) ->
     case Action of
-	friends_timeline ->
-	    "friends_timeline.json";
-	user_timeline ->
-	    "user_timeline.json";
-	public_timeline ->
-	    "public_timeline.json";
-	replies ->
-	    "replies.json";
-	 _ ->
-	    { error, no_such_action }
+        friends_timeline ->
+            "friends_timeline.json";
+        user_timeline ->
+            "user_timeline.json";
+        public_timeline ->
+            "public_timeline.json";
+        replies ->
+            "replies.json";
+         _ ->
+            { error, no_such_action }
     end.
 
 head_for_service( Service ) ->
     case Service of
-	twitter ->
-	    "http://www.twitter.com/statuses/";
-	identica ->
-	    "http://identi.ca/api/statuses/";
-	_ ->
-	    { error, no_such_service }
+        twitter ->
+            "http://www.twitter.com/statuses/";
+        identica ->
+            "http://identi.ca/api/statuses/";
+        _ ->
+            { error, no_such_service }
     end.
 
 %
@@ -148,23 +149,26 @@ head_for_service( Service ) ->
 
 is_running() ->
     case whereis( keyd ) of
-	undefined ->
-	    Parent = self(),
-	    spawn( fun() ->
-			   register( keyd, self() ),
-			   Parent ! { registered, self() },
-			   keyd_loop()
-		   end ),
-	    receive
-		{ registered, P } ->
-		    P
-	    after 5000 ->
-		    whereis( keyd )
-	    end;
-	P ->
-	    P
+        undefined ->
+            Parent = self(),
+            spawn( fun() ->
+                           register( keyd, self() ),
+                           Parent ! { registered, self() },
+                           keyd_loop()
+                   end ),
+            receive
+                { registered, P } ->
+                    P
+            after 5000 ->
+                    whereis( keyd )
+            end;
+        P ->
+            P
     end.
 
+%
+% From Joe Armstrong's book
+%
 keyd_store( Key, Value ) ->
     is_running(),
     rpc( { store, Key, Value } ).
@@ -176,17 +180,17 @@ keyd_lookup( Key ) ->
 rpc( Q ) ->
     keyd ! { self(), Q },
     receive
-	{ keyd, Reply } ->
-	    Reply
+        { keyd, Reply } ->
+            Reply
     end.
 
 keyd_loop() ->
     receive
-	{ From, { store, Key, Value } } ->
-	    put( Key, { ok, Value } ),
-	    From ! { keyd, true },
-	    keyd_loop();
-	{ From, { lookup, Key } } ->
-	    From ! { keyd, get( Key ) },
-	    keyd_loop()
+        { From, { store, Key, Value } } ->
+            put( Key, { ok, Value } ),
+            From ! { keyd, true },
+            keyd_loop();
+        { From, { lookup, Key } } ->
+            From ! { keyd, get( Key ) },
+            keyd_loop()
     end.

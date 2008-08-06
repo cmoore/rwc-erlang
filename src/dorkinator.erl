@@ -1,15 +1,15 @@
 
 -module( dorkinator ).
 -export( [
-	  start/0,
-	  validate/3,
-	  stop/0,
-	  halt/0,
-	  s_init/0,
-	  s_store/2,
-	  s_find/1,
-	  build_templates/0
-	 ] ).
+          start/0,
+          validate/3,
+          stop/0,
+          halt/0,
+          s_init/0,
+          s_store/2,
+          s_find/1,
+          build_templates/0
+         ] ).
 
 -include( "/usr/local/lib/yaws/include/yaws.hrl" ).
 -include( "/usr/local/lib/yaws/include/yaws_api.hrl" ).
@@ -32,11 +32,11 @@ start() ->
     application:start( yaws ),
     GC = yaws_config:make_default_gconf( false, "" ),
     SC = #sconf{ port = 3000,
-		 servername = "localhost",
-		 listen = { 127,0,0,1 },
-		 docroot = "www",
-		 appmods = [ { "/", core_handler } ]
-		},
+                 servername = "localhost",
+                 listen = { 127,0,0,1 },
+                 docroot = "www",
+                 appmods = [ { "/", core_handler } ]
+                },
     kvs:start(),
     erlydtl:create_parser(),
     build_templates(),
@@ -70,11 +70,11 @@ s_store( Login, Auth ) ->
 
 s_find( Login ) ->
     case ets:lookup( ipdsessions, Login ) of
-	[ { Login, Auth } ] ->
-	    Auth;
-	_ ->
-	    false
-    end.	
+        [ { Login, Auth } ] ->
+            Auth;
+        _ ->
+            false
+    end.        
 
 build_templates() ->
     TemplateList = [ "header", "footer", "index", "catastrophic","setup", "qdirect", "viewer" ],
