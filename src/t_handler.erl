@@ -1,7 +1,7 @@
 
 -module( t_handler ).
--export( [ out/1, reformat_twitter_data/1 ] ).
--include( "yaws_api.hrl" ).
+-export( [ out/1, reformat_friends_data/1 ] ).
+-include( "/usr/local/lib/yaws/include/yaws_api.hrl" ).
 -include( "dorkinator.hrl" ).
 
 out( Pf ) ->
@@ -67,9 +67,12 @@ viewer_handler( A, Px ) ->
 		    Key = Val#session.key,
 		    case kvs:lookup( Key ) of
 			{ ok, AuthInfo } ->
-			    % We have the login and password that was stored from setup!
-			    Twitter_data = pull_service_data( [ { service, twitter }, { auth, AuthInfo } ] ),
-			    { html, Px:page( "viewer", [ { twitter_messages, "1" }, { tmessages, reformat_twitter_data( Twitter_data ) } ] ) };
+			    Twitter_data = get_friends_timeline( [ { service, twitter }, { auth, AuthInfo } ] ),
+			    Identica_data = get_friends_timeline( [ { service, identica }, { auth, AuthInfo } ] ),
+			    { html, Px:page( "viewer", [
+							{ twittermessages, reformat_friends_data( Twitter_data ) },
+							{ identicamessages, reformat_friends_data( Identica_data ) }
+						       ] ) };
 			_ ->
 			    { redirect, "/t/setup" }
 		    end;
@@ -78,36 +81,34 @@ viewer_handler( A, Px ) ->
 	    end
     end.
 
+get_friends_timeline( Info ) ->
+    case Info of
+	[ { service, Service }, { auth, AuthInfo } ] ->
+	    io:format( "~p~n", [ atom_to_list( Service ) ++ "_" ++ atom_to_list( login ) ] ),
+	    pull_service_data(
+	      field_from_auth( AuthInfo, list_to_atom(atom_to_list(Service) ++ "_" ++ atom_to_list(login)) ),
+	      field_from_auth( AuthInfo, list_to_atom(atom_to_list(Service) ++ "_" ++ atom_to_list(password)) ),
+	      Service, friends_timeline )
+    end.
+
+field_from_auth( Auth, Field ) ->		    
+    case lists:keysearch( Field, 1, Auth ) of
+	{ value, { Field, Value } } ->
+	    Value;
+	_ ->
+	    null
+    end.
+
 gen_key() ->
     Key = crypto:rand_bytes( 20 ),
     base64:encode( binary_to_list( Key ) ).
 
-pull_service_data( Params ) ->
-    case lists:keysearch( service, 1, Params ) of
-	{ value, { service, twitter } } ->
-	    case lists:keysearch( auth, 1, Params ) of
-		{ value, { auth, AuthInfo } } ->
-		    case lists:keysearch( twitter_login, 1, AuthInfo ) of
-			{ value, { twitter_login, Tlogin } } ->
-			    case lists:keysearch( twitter_password, 1, AuthInfo ) of
-				{ value, { twitter_password, TPassword } } ->
-				    case lwtc:setup( [ { login, Tlogin }, { password, TPassword }, { mode, twitter } ] ) of
-					true ->
-					    lwtc:friends_timeline( Tlogin );
-					false ->
-					    [ { error, "LWTC could not be set up." } ]
-				    end;
-				_ ->
-				    [ { error, "Could not find the twitter password." } ]
-			    end;
-			_ ->
-			    [ { error, "Could not find the twitter login." } ]
-		    end;
-		_ ->
-		    [ { error, "pull_service_data: Could not find the passed auth info!?" } ]
-	    end;
-	_ ->
-	    [ { error, "You need to specify a service type in setup." } ]
+pull_service_data( Login, Password, Service, Request ) ->
+    case lwtc:setup( [ { login, Login }, { password, Password }, { mode, Service } ] ) of
+	true ->
+	    lwtc:request( Login, Request );
+	{ error, Reason } ->
+	    Reason
     end.
 
 %
@@ -115,9 +116,9 @@ pull_service_data( Params ) ->
 % so we've got to do some interpretive dance to get erlydtl to like it.
 %
 
-reformat_twitter_data( [] ) ->
+reformat_friends_data( [] ) ->
     [];
-reformat_twitter_data( [ Element | Rest ] ) ->
+reformat_friends_data( [ Element | Rest ] ) ->
     case Element of
 	{ struct, List } ->
 	    case lists:keysearch( list_to_binary( "id" ), 1, List ) of
@@ -129,14 +130,10 @@ reformat_twitter_data( [ Element | Rest ] ) ->
 					    { text, Text },
 					    { picture, element_from_user( List, <<"profile_image_url">> ) },
 					    { name, element_from_user( List, <<"name">> ) }
-					   ]], reformat_twitter_data( Rest ))
+					   ]], reformat_friends_data( Rest ))
 		    end
 	    end
     end.
-
-%
-% This should probably be in lwtc - I'll refactor later, it's late and I want to see it work.
-%
 
 element_from_user( Message, Element ) ->
     case lists:keysearch( <<"user">>, 1, Message ) of

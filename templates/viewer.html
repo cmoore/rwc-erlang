@@ -1,22 +1,35 @@
 {% include "header.html" %}
 
-Oh snap!
-<br/>
-<br/>
-
-<!-- $if twitter_messages$ -->
 <div style="background:white;width:100%;color:black;padding:1px;position:relative;">
   <div style="background:#606870;color:white;padding:10px;align:center;">
-    {% if twitter_messages %}
-    {% for e in tmessages %}
-    <div><img src="{{ e.picture }}"> {{ e.name }}<br/>
-      {{ e.text }}
-      </div>
-    {% endfor %}
-    {% endif %}
+    <div style="float:left;">
+      <table style="width:200px;">
+	<tr><th>Twitter</th></tr>
+	{% for e in twittermessages %}
+	<tr>
+	  <td><img src="{{ e.picture }}"/>{{ e.name }}</td>
+	</tr>
+	<tr>
+	  <td style="margin-bottom:4px;border-bottom:1px solid white;">{{ e.text }}</td>
+	</tr>
+	{% endfor %}
+      </table>
+    </div>
+    <div style="float:right;">
+      <table style="width:200px;">
+	<tr><th>identi.ca</th></tr>
+	{% for e in identicamessages %}
+	<tr>
+	  <td><img src="{{ e.picture }}"/>{{ e.name }}</td>
+	</tr>
+	<tr>
+	  <td style="margin-bottom:4px;border-bottom:1px solid white;">{{ e.text }}</td>
+	</tr>
+	{% endfor %}
+      </table>
+    </div>
   </div>
 </div>
-<!-- $end if$ -->
 
 {% include "footer.html" %}
 

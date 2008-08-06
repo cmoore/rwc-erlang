@@ -25,15 +25,10 @@ halt() ->
     stop(),
     init:stop().
 
-etinit() ->
-    Px = ets:new( dorkinator, [ set, public, named_table ] ),
-    ets:insert( Px, { "honk", "donk" } ).
-
 start() ->
     make:all(),
     crypto:start(),
     inets:start(),
-    etinit(),
     application:start( yaws ),
     GC = yaws_config:make_default_gconf( false, "" ),
     SC = #sconf{ port = 3000,
