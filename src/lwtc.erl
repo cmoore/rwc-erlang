@@ -77,15 +77,20 @@ request( Login, Request ) ->
     case keyd_lookup( Login ) of
 	{ ok, List } ->
 	    case lists:keysearch( service, 1, List ) of
-		{ value, { service, twitter } } ->
-		    Url = head_for_service( twitter ) ++ url_for_action( Request ),
-		    case json_request( Login, Url ) of
-			{ error, Reason } ->
-			    { error, Reason };
-			[] ->
-			    { error, request_error };
-			Data ->
-			    Data
+		{ value, { service, Service } } ->
+		    Url = head_for_service( Service ) ++ url_for_action( Request ),
+		    case lists:keysearch( password, 1, List ) of
+			{ value, { password, Password } } ->
+			    case json_request( Login, Password, Url ) of
+				{ error, Reason } ->
+				    { error, Reason };
+				[] ->
+				    { error, request_error };
+				Data ->
+				    Data
+			    end;
+			_ ->
+			    { error, no_password_set }
 		    end;
 		_ ->
 		    { error, no_service }
@@ -98,17 +103,12 @@ request( Login, Request ) ->
 % End of user-serviceable parts.
 %
 
-json_request( Login, Url ) ->
-    case keyd_lookup( Login ) of
-	{ ok, [ { login, Login }, { password, Password }, { _, _ } ] } ->
-	    case http_auth_request( Url, Login, Password ) of
-		{ ok, { _, _, Result } } ->
-		    mochijson2:decode( Result );
-		_ ->
-		    { error, bad_result_from_http_request }
-	    end;
+json_request( Login, Password, Url ) ->
+    case http_auth_request( Url, Login, Password ) of
+	{ ok, { _, _, Result } } ->
+	    mochijson2:decode( Result );
 	_ ->
-	    { error, module_not_set_up }
+	    { error, bad_result_from_http_request }
     end.
 
 http_auth_request( Url, User, Pass ) ->
