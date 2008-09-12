@@ -31,28 +31,23 @@ setup_handler( A, Pf ) ->
                                           "twitter_login",
                                           "twitter_password",
                                           "identica_login",
-                                          "identica_password",
-                                          "ping_login",
-                                          "ping_password"
+                                          "identica_password"
                                          ], fun validate_field/2 ) of
 
-                { [ T_login, T_password, I_login, I_password, P_login, P_password ], [] } ->
+                { [ T_login, T_password, I_login, I_password ], [] } ->
                     kvs:store( AuthKey, [
                                          { twitter_login, T_login },
                                          { twitter_password, T_password },
                                          { identica_login, I_login },
-                                         { identica_password, I_password },
-                                         { ping_login, P_login },
-                                         { ping_password, P_password }
+                                         { identica_password, I_password }
                                         ] ),
                     [ { html, Pf:page( "qdirect" ) }, format_cookie( #session{ key = AuthKey } ) ];
                 _ ->
                     { html, Pf:page( "viewer", [ { error, "Something went horribly wrong." } ] ) }
             end
     end.
-                        
-validate_field( X, Y ) ->
-    io:format( "X: ~p Y: ~p~n", [ X, Y ] ),
+
+validate_field( _X, _Y ) ->
     ok.
 
 viewer_handler( A, Px ) ->
@@ -84,7 +79,6 @@ viewer_handler( A, Px ) ->
 get_friends_timeline( Info ) ->
     case Info of
         [ { service, Service }, { auth, AuthInfo } ] ->
-            io:format( "~p~n", [ atom_to_list( Service ) ++ "_" ++ atom_to_list( login ) ] ),
             pull_service_data(
               field_from_auth( AuthInfo, list_to_atom(atom_to_list(Service) ++ "_" ++ atom_to_list(login)) ),
               field_from_auth( AuthInfo, list_to_atom(atom_to_list(Service) ++ "_" ++ atom_to_list(password)) ),
@@ -143,3 +137,6 @@ element_from_user( Message, Element ) ->
                     binary_to_list( User )
             end
     end.
+
+text_markup( Text ) ->
+    Text.

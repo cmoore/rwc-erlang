@@ -33,7 +33,7 @@ start() ->
     GC = yaws_config:make_default_gconf( false, "" ),
     SC = #sconf{ port = 3000,
                  servername = "localhost",
-                 listen = { 127,0,0,1 },
+                 listen = { 0,0,0,0 },
                  docroot = "www",
                  appmods = [ { "/", core_handler } ]
                 },

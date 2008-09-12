@@ -1,17 +1,39 @@
 {% include "header.html" %}
-<form action="/t/setup" method="POST">
-  <table>
-    <tr><td>Twitter Login</td><td><input type="text" name="twitter_login"></td></tr>
-    <tr><td>Twiiter Password</td><td><input type="text" name="twitter_password"></td></tr>
-    <tr><td colspan=2><hr></tr>
-    <tr><td>Ping.fm Login</td><td><input type="text" name="ping_login"></td></tr>
-    <tr><td>Ping.fm Password</td><td><input type="text" name="ping_password"></td></tr>
-    <tr><td colspan=2><hr></tr>
-    <tr><td>Identi.ca Login:</td><td><input type="text" name="identica_login"></td></tr>
-    <tr><td>Identi.ca Password:</td><td><input type="text" name="identica_password"></td></tr>
-    <tr><td colspan=2><hr></tr>
-    <tr><td colspan=2><input type="submit" value="Save"></td></tr>
-  </table>
-</form>
+<div class="loginblock">
+  <div id="gaia_loginbox" class="body">
+    <form action="/t/setup" method="POST">
+
+      <div class="iphoneblock">
+        <span class="gaia le lbl">
+          Twitter Login
+        </span>
+      </div>
+      <input type="text" name="twitter_login" size=18 class="gaia le val">
+      <div class="iphoneblock">
+        <span class="gaia le lbl">
+          Twitter Password
+        </span>
+      </div>
+      <input type="text" name="twitter_password" size=18 class="gaia le val">
+      <div class="iphoneblock">
+        <span class="gaia le lbl">
+          Identica Login
+        </span>
+      </div>
+      <input type="text" name="identica_login" size=18 class="gaia le val">
+      <div class="iphoneblock">
+        <span class="gaia le lbl">
+          Identica Password
+        </span>
+      </div>
+      <input type="text" name="identica_password" size=18 class="gaia le val">
+      <div class="iphonesubmit">
+        <span class="gaia le button">
+          <input type="submit" value="Send"/>
+        </span>
+      </div>
+    </form>
+  </div>
+</div>
 {% include "footer.html" %}
 

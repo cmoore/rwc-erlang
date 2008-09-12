@@ -31,9 +31,9 @@
 %
 % @drivel
 % 
-% I'd like for this to be completely standalone but alas, I have much more faith in
-% Bob Ippolito's ability to write a json parser than my own.  And it's for this 
-% reason that mochijson2.erl is a required dependency.
+% I'd like for this to be completely standalone but alas, I have much more faith
+% in Bob Ippolito's ability to write a json parser than my own.  And it's for
+% this reason that mochijson2.erl is a required dependency.
 %
 % @end
 %
@@ -74,29 +74,30 @@ setup( AuthInfo ) ->
 % support for more coming soon.
 % @end
 request( Login, Request ) ->
-    case keyd_lookup( Login ) of
-        { ok, List } ->
-            case lists:keysearch( service, 1, List ) of
-                { value, { service, Service } } ->
-                    Url = head_for_service( Service ) ++ url_for_action( Request ),
-                    case lists:keysearch( password, 1, List ) of
-                        { value, { password, Password } } ->
-                            case json_request( Login, Password, Url ) of
-                                { error, Reason } ->
-                                    { error, Reason };
-                                [] ->
-                                    { error, request_error };
-                                Data ->
-                                    Data
-                            end;
-                        _ ->
-                            { error, no_password_set }
-                    end;
-                _ ->
-                    { error, no_service }
-            end;
-        _ ->
-            { error, no_setup_info }
+    try
+        List = case keyd_lookup( Login ) of
+                   { ok, X } ->
+                       X;
+                   _ ->
+                       false
+               end,
+        Service = case lists:keysearch( service, 1, List ) of
+                      { value, { service, Xp } } ->
+                          Xp;
+                      _ ->
+                          false
+                  end,
+        Url = head_for_service( Service ) ++ url_for_action( Request ),
+        Password = case lists:keysearch( password, 1, List ) of
+                       { value, { password, Pa } } ->
+                           Pa;
+                       _ ->
+                           false
+                   end,
+        json_request( Login, Password, Url )
+    catch
+        _:_ ->
+            { error, { somethings_messed_up } }
     end.
 
 %
@@ -160,7 +161,7 @@ is_running() ->
                 { registered, P } ->
                     P
             after 5000 ->
-                    whereis( keyd )
+                    is_running()
             end;
         P ->
             P

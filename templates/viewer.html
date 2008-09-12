@@ -1,33 +1,24 @@
 {% include "header.html" %}
 
-<div style="background:white;width:100%;color:black;padding:1px;position:relative;">
-  <div style="background:#606870;color:white;padding:10px;align:center;">
-    <div style="float:left;">
-      <table style="width:200px;">
-	<tr><th>Twitter</th></tr>
-	{% for e in twittermessages %}
-	<tr>
-	  <td><img src="{{ e.picture }}"/>{{ e.name }}</td>
-	</tr>
-	<tr>
-	  <td style="margin-bottom:4px;border-bottom:1px solid white;">{{ e.text }}</td>
-	</tr>
-	{% endfor %}
-      </table>
+<div class="loginblock">
+  <div class="gaia_loginbox" class="body">
+    {% for e in twittermessages %}
+    <div class="iphoneblock">
+      <img src="{{ e.picture }}" style="width:40px;height:40px;"/>
+      <span class="gaia le lbl">
+        {{ e.text }}
+      </span>
     </div>
-    <div style="float:right;">
-      <table style="width:200px;">
-	<tr><th>identi.ca</th></tr>
-	{% for e in identicamessages %}
-	<tr>
-	  <td><img src="{{ e.picture }}"/>{{ e.name }}</td>
-	</tr>
-	<tr>
-	  <td style="margin-bottom:4px;border-bottom:1px solid white;">{{ e.text }}</td>
-	</tr>
-	{% endfor %}
-      </table>
+    <!-- <hr style="color:#BBCCDD;"> -->
+    {% endfor %}
+    {% for e in identicamessages %}
+    <div class="iphoneblock">
+      <img src="{{ e.picture }}" style="width:40px;height:40px;"/>
+      <span class="gaia le lbl">
+        {{ e.text }}
+      </span>
     </div>
+    {% endfor %}
   </div>
 </div>
 
