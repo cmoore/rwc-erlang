@@ -11,8 +11,8 @@
           build_templates/0
          ] ).
 
--include( "/usr/local/lib/yaws/include/yaws.hrl" ).
--include( "/usr/local/lib/yaws/include/yaws_api.hrl" ).
+-include( "yaws.hrl" ).
+-include( "yaws_api.hrl" ).
 -include_lib( "stdlib/include/qlc.hrl" ).
 
 stop() ->
