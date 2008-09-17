@@ -16,7 +16,6 @@ out( Pf ) ->
             { html, Pf:page( "index" ) }
     end.
 
-
 format_cookie( Sx ) ->
     Cookie = yaws_api:new_cookie_session( Sx ),
     yaws_api:setcookie( "dorkinator", Cookie, "/" ).
@@ -85,7 +84,7 @@ get_friends_timeline( Info ) ->
               Service, friends_timeline )
     end.
 
-field_from_auth( Auth, Field ) ->                   
+field_from_auth( Auth, Field ) ->
     case lists:keysearch( Field, 1, Auth ) of
         { value, { Field, Value } } ->
             Value;
@@ -123,7 +122,8 @@ reformat_friends_data( [ Element | Rest ] ) ->
                                             { id, Id },
                                             { text, Text },
                                             { picture, element_from_user( List, <<"profile_image_url">> ) },
-                                            { name, element_from_user( List, <<"name">> ) }
+                                            { name, element_from_user( List, <<"name">> ) },
+                                            { created, lists:keysearch( list_to_binary( "created_at" ), 1, List ) }
                                            ]], reformat_friends_data( Rest ))
                     end
             end
@@ -138,5 +138,3 @@ element_from_user( Message, Element ) ->
             end
     end.
 
-text_markup( Text ) ->
-    Text.
