@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
 
+THIS_DIR=`pwd`
+# "include" should be underneath this directory.
+YAWS_DIR="/usr/local/lib/yaws"
+# hostname and hostname -f aren't always the best
+# option especially if you want to run more than
+# one of these at the same time.
+NAME="dorkinator@elguapo.local"
+
 mkdir -p log
 mkdir -p ebin
-erlc src/dorkinator.erl -o ebin
 
-THIS_DIR=`pwd`
-HOST=`hostname`
-YAWS_DIR="/usr/local/lib/yaws"
+OPTIONS="-pa $YAWS_DIR -pa $YAWS_DIR/include -pa $YAWS_DIR/ebin $THIS_DIR/ebin"
+
+erl -make
 
 if [ $? -ne 0 ]; then exit; fi
 
 erl -setcookie monster \
-    -pa $YAWS_DIR/ebin $THIS_DIR/ebin \
-    -yaws embedded true -s dorkinator -name dorkinator@elguapo.local
+    -pa $YAWS_DIR -pa $YAWS_DIR/include -pa $YAWS_DIR/ebin $THIS_DIR/ebin \
+    -yaws embedded true -s dorkinator -name $NAME
+

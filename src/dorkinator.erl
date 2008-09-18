@@ -17,7 +17,6 @@
 
 stop() ->
     application:stop( yaws ),
-    mnesia:stop(),
     inets:stop(),
     crypto:stop().
 

@@ -1,10 +1,42 @@
 
-This is/will be a twitter and identica aggregator that uses ping.fm to send updates.  At the moment though it doesn't work.  But if you are the adventurous type you can ... 
+This is/will be a twitter and identica aggregator that uses ping.fm to send
+updates geared toward the iphone but will work in any browser.  At the moment
+though it only partially works.  If you are the adventurous type you can ... 
 
 GETTING IT RUNNING -
 
-Most of the stuff here is fairly self contained.  You'll definitely want to edit start.sh
-and src/dorkinator.erl and change the paths.  Also, unless you have yaws installed in 
-/usr/local/lib/yaws, you'll need to edit the Emakefile.  Otherwise you should be able to
-just run ./start.sh and open a browser to localhost:3000.  Reports on the success or 
-failure of this are welcomed.
+You'll need:
+erlang
+yaws
+
+Most of the stuff here is fairly self contained.  You'll definitely want to copy
+start-template.sh to start.sh and change the paths.  There are a few tunables in
+src/dorkinator.erl as well including the listening port.  Otherwise you should be
+able to just run ./start.sh and open a browser to localhost:3000.  Reports on the
+success or failure of this are definitely welcomed.
+
+Usage -
+
+Once it's built and running, go to localhost:3000/t/setup and enter in your twitter
+and identica info.  The page should refresh to /t/viewer and should list your tweets
+etc. from both services.  That's as much as is working at the moment.
+
+Contact moc.cam@odyh with patches, questions, suggestions, etc.  Seriously, I listen
+to suggestions.  Bring 'em on.
+
+I'm going to work on a quickie development overview for people who might want to 
+hack on this to get them going faster.  I also seem to uncover quite a lot of 
+cruft and stupid mistakes when I write docs for a my own projects so it's not 
+entirely a selfless act.
+
+This code has been tested on
+- Mac OS X / Server 10.5 using the MacPorts build of Erlang and YAWS.
+- FreeBSD / using the ports version of Erlang and YAWS.
+
+Plans/Ideas/Etc.
+
+- Explore the possibility of doing a whole ui in dashcode.  There's several pretty 
+cool things that are Safari-specific that might be fun to mess with.  For instance
+the simple client-side database system would be a nice place to possibly store
+authentication info.  Or, maybe not.  With or without the safari-specific stuff
+a dashcode interface would be pretty slick.
