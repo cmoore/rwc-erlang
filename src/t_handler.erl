@@ -1,7 +1,7 @@
 
 -module( t_handler ).
 -export( [ out/1, reformat_friends_data/1 ] ).
--include( "/usr/local/lib/yaws/include/yaws_api.hrl" ).
+-include( "yaws_api.hrl" ).
 -include( "dorkinator.hrl" ).
 
 out( Pf ) ->
