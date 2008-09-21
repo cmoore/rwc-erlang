@@ -1,6 +1,6 @@
 
 -module( t_handler ).
--export( [ out/1, reformat_friends_data/1 ] ).
+-export( [ out/1, reformat_friends_data/1, merge_by_date/1, date_from_message/1, msg_date_to_local/1 ] ).
 -include( "yaws_api.hrl" ).
 -include( "dorkinator.hrl" ).
 
@@ -129,6 +129,18 @@ reformat_friends_data( [ Element | Rest ] ) ->
             end
     end.
 
+merge_by_date( [] ) ->
+    [];
+merge_by_date( [ Element | Rest ] ) ->
+    { struct, Entry } = Element,
+    case lists:keysearch( <<"created_at">>, 1, Entry ) of
+        { value, { _, X } } ->
+            io:format( "~p~n", [ binary_to_list( X ) ] );
+        _ ->
+            io:format( "Noes~n" )
+    end,
+    merge_by_date( Rest ).
+
 element_from_user( Message, Element ) ->
     case lists:keysearch( <<"user">>, 1, Message ) of
         { value, { <<"user">>, { struct, UserList } } } ->
@@ -138,3 +150,24 @@ element_from_user( Message, Element ) ->
             end
     end.
 
+date_from_message( Message ) ->
+    case Message of
+        { struct, Entry } ->
+            case lists:keysearch( <<"created_at">>, 1, Entry ) of
+                { value, { _, X } } ->
+                    X;
+                _ ->
+                    { error, date_not_found }
+            end
+    end.
+
+msg_date_to_local( Date ) ->
+    case string:tokens( binary_to_list( Date ), " " ) of
+        [ _, Mon, Dom, Time, _, Year ] ->
+            case string:tokens( Time, ":" ) of
+                [ Hour, Minute, Seconds ] ->
+                    { { Year, Mon, Dom }, { Hour, Minute, Seconds } };
+                _ ->
+                    { error, unparsable }
+            end
+    end.
