@@ -2,7 +2,7 @@
 
 THIS_DIR=`pwd`
 # "include" should be underneath this directory.
-YAWS_DIR="/opt/local/lib/yaws"
+YAWS_DIR="/usr/local/lib/yaws"
 # hostname and hostname -f aren't always the best
 # option especially if you want to run more than
 # one of these at the same time.

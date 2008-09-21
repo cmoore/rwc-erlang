@@ -6,4 +6,4 @@
 	     { i, "/opt/local/lib/yaws/include" }
 	    ] }.
 { "src/erlydtl/*", [ debug_info, { d, debug }, { outdir, "ebin" } ] }.
-
+{ "src/erlang_twitter/src/*", [ { outdir, "ebin" }, { i, "src/erlang_twitter/include" } ] }.

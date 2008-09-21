@@ -37,6 +37,7 @@ start() ->
                  appmods = [ { "/", core_handler } ]
                 },
     kvs:start(),
+    twitter_client:start(),
     erlydtl:create_parser(),
     build_templates(),
     yaws_api:setconf( GC, [[ SC ]] ).
