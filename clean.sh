@@ -8,4 +8,5 @@ rm -f *.access
 find . -name "*.beam" -exec rm -f {} \;
 rm -rf ebin/*
 find . -name ".DS_Store" -exec rm -f {} \;
+rm -f src/erlydtl/erlydtl_parser.erl
 
