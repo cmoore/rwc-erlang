@@ -9,8 +9,11 @@ You'll need:
 erlang
 yaws
 
-Most of the stuff here is fairly self contained.  You'll definitely want to copy
-start-template.sh to start.sh and change the paths.  There are a few tunables in
+1 - Copy Emakefile.sample to Emakefile and change the paths for Yaws and xmerl
+2 - Copy start.sh.sample to start.sh and change YAWS_DIR and NAME if you like.
+3 - Run start.sh and see what happens.
+
+Most of the stuff here is fairly self contained.  There are a few tunables in
 src/dorkinator.erl as well including the listening port.  Otherwise you should be
 able to just run ./start.sh and open a browser to localhost:3000.  Reports on the
 success or failure of this are definitely welcomed.
