@@ -1,3 +1,0 @@
-[submodule "src/erlang_twitter"]
-	path = src/erlang_twitter
-	url = git://github.com/ngerakines/erlang_twitter.git
