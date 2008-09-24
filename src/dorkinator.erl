@@ -37,7 +37,6 @@ start() ->
                  appmods = [ { "/", core_handler } ]
                 },
     kvs:start(),
-    twitter_client:start(),
     erlydtl:create_parser(),
     build_templates(),
     yaws_api:setconf( GC, [[ SC ]] ).
@@ -77,5 +76,5 @@ s_find( Login ) ->
     end.        
 
 build_templates() ->
-    TemplateList = [ "header", "footer", "index", "catastrophic","setup", "qdirect", "viewer" ],
+    TemplateList = [ "tweet", "header", "footer", "index", "catastrophic","setup", "qdirect", "viewer" ],
     [ erlydtl_compiler:compile( "./templates/" ++ X ++ ".html", X, [ { out_dir, "./ebin" } ] ) || X <- TemplateList ].

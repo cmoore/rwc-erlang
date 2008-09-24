@@ -12,16 +12,21 @@ out( Pf ) ->
             setup_handler( A, Pf );
         "t/viewer" ->
             viewer_handler( A, Pf );
+        "t/tweet" ->
+            tweet_handler( A, Pf );
         _ ->
             { html, Pf:page( "index" ) }
     end.
 
+tweet_handler( _A, Pf ) ->
+    { html, Pf:page( "tweet" ) }.
+
 format_cookie( Sx ) ->
-    Cookie = yaws_api:new_cookie_session( Sx ),
+    Cookie = yaws_api:new_cookie_session( Sx, (60 * 60 * 24 * 365) ),
     yaws_api:setcookie( "dorkinator", Cookie, "/" ).
     
 setup_handler( A, Pf ) ->
-    case yaws_arg:method( A ) of
+    case (A#arg.req)#http_request.method of
         'GET' ->
             { html, Pf:page( "setup" ) };
         'POST' ->
@@ -61,11 +66,11 @@ viewer_handler( A, Px ) ->
                     Key = Val#session.key,
                     case kvs:lookup( Key ) of
                         { ok, AuthInfo } ->
-                            Twitter_data = get_friends_timeline( [ { service, twitter }, { auth, AuthInfo } ] ),
-                            Identica_data = get_friends_timeline( [ { service, identica }, { auth, AuthInfo } ] ),
+                            Twitter_data = reformat_friends_data( friends_timeline( [ { service, twitter }, { auth, AuthInfo } ] ) ),
+                            Identica_data = reformat_friends_data( friends_timeline( [ { service, identica }, { auth, AuthInfo } ] ) ),
                             { html, Px:page( "viewer", [
-                                                        { twittermessages, reformat_friends_data( Twitter_data ) },
-                                                        { identicamessages, reformat_friends_data( Identica_data ) }
+                                                        { twittermessages, Twitter_data },
+                                                        { identicamessages, Identica_data }
                                                        ] ) };
                         _ ->
                             { redirect, "/t/setup" }
@@ -75,13 +80,18 @@ viewer_handler( A, Px ) ->
             end
     end.
 
-get_friends_timeline( Info ) ->
+friends_timeline( Info ) ->
     case Info of
         [ { service, Service }, { auth, AuthInfo } ] ->
-            pull_service_data(
-              field_from_auth( AuthInfo, list_to_atom(atom_to_list(Service) ++ "_" ++ atom_to_list(login)) ),
-              field_from_auth( AuthInfo, list_to_atom(atom_to_list(Service) ++ "_" ++ atom_to_list(password)) ),
-              Service, friends_timeline )
+            case pull_service_data(
+                   field_from_auth( AuthInfo, list_to_atom(atom_to_list(Service) ++ "_login") ),
+                   field_from_auth( AuthInfo, list_to_atom(atom_to_list(Service) ++ "_password") ),
+                   Service, friends_timeline ) of
+                { error, _ } ->
+                    { error, pull_service_data_failed };
+                Px ->
+                    Px
+            end
     end.
 
 field_from_auth( Auth, Field ) ->
@@ -99,16 +109,28 @@ gen_key() ->
 pull_service_data( Login, Password, Service, Request ) ->
     case lwtc:setup( [ { login, Login }, { password, Password }, { mode, Service } ] ) of
         true ->
-            lwtc:request( Login, Request );
-        { error, Reason } ->
-            Reason
+            Px = lwtc:request( Login, Request ),
+            case Px of
+                { error, _ } ->
+                    { error, lwtc_errored_out };
+                { struct, Fv } ->
+                    case lists:keysearch( list_to_binary( "error" ), 1, Fv ) of
+                        { value, _ } ->
+                            { error, lwtc_errored_out };
+                        _ ->
+                            Px
+                    end;
+                Ft ->
+                    Ft
+            end
     end.
 
 %
 % The mochi json parser returns the keys in binary format
 % so we've got to do some interpretive dance to get erlydtl to like it.
 %
-
+reformat_friends_data( { error, pull_service_data_failed } ) ->
+    [];
 reformat_friends_data( [] ) ->
     [];
 reformat_friends_data( [ Element | Rest ] ) ->

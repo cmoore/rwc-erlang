@@ -1,31 +1,23 @@
 {% include "header.html" %}
+
 <form method="POST" action="/t/post">
   <input type="text" name="message"/>
   <input type="submit" value="send"/>
 </form>
-
-<div class="loginblock">
-  <div class="gaia_loginbox" class="body">
-    {% for e in twittermessages %}
-    <div class="iphoneblock">
-      <img src="{{ e.picture }}" style="width:40px;height:40px;"/>
-      <span class="gaia le lbl">
+<br/>
+{% for e in twittermessages %}
+<div style="margin:2px;background-color:white;border:1px solid grey;">
+  <table>
+    <tr>
+      <td>
+        <a href="/t/tweet?{{ e.id }}"><img border=0 src="{{ e.picture }}" style="width:40px;height:40px;"/></a>
+      </td>
+      <td>
         {{ e.text }}
-      </span>
-    </div>
-    <!-- <hr style="color:#BBCCDD;"> -->
-    {% endfor %}
-    {% for e in identicamessages %}
-    <div class="iphoneblock">
-      <img src="{{ e.picture }}" style="width:40px;height:40px;"/>
-      <span class="gaia le lbl">
-        {{ e.text }}
-      </span>
-    </div>
-    {% endfor %}
-  </div>
+      </td>
+    </tr>
+  </table>
 </div>
+{% endfor %}
 
 {% include "footer.html" %}
-
-

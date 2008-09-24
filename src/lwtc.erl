@@ -40,7 +40,7 @@
 
 -module( lwtc ).
 
--export( [ setup/1, request/2 ] ).
+-export( [ setup/1, request/2, request/3 ] ).
 
 -author( "Clint Moore <hydo@mac.com>" ).
 
@@ -66,6 +66,9 @@ setup( AuthInfo ) ->
             false
     end.
 
+request( Login, Request ) ->
+    request( Login, Request, nil ).
+
 % @spec ( "login_name", request ) -> List | { error, reason }
 % @doc
 % performs the requested request.(heh)
@@ -73,7 +76,7 @@ setup( AuthInfo ) ->
 % friends_timeline, user_timeline, public_timeline, and replies
 % support for more coming soon.
 % @end
-request( Login, Request ) ->
+request( Login, Request, Id ) ->
     try
         List = case keyd_lookup( Login ) of
                    { ok, X } ->
@@ -87,7 +90,13 @@ request( Login, Request ) ->
                       _ ->
                           false
                   end,
-        Url = head_for_service( Service ) ++ url_for_action( Request ),
+        Url_for_action = case Id of
+                             nil ->
+                                 url_for_action( Request );
+                             Px ->
+                                 url_for_action( Request, Px )
+                         end,
+        Url = head_for_service( Service ) ++ Url_for_action,
         Password = case lists:keysearch( password, 1, List ) of
                        { value, { password, Pa } } ->
                            Pa;
@@ -121,7 +130,18 @@ headers( User, Pass ) ->
     [ { "User-Agent", "Dorkpatrol/0.1" }, { "Authorization", Basic } ].
 
 url_for_action( Action ) ->
+    url_for_action( Action, none ).
+
+url_for_action( Action, Id ) ->
     case Action of
+        show ->
+            io:format( "Caught show.~n", [] ),
+            case Id of
+                none ->
+                    "";
+                _ ->
+                    "show/" ++ Id ++ ".json"
+            end;
         friends_timeline ->
             "friends_timeline.json";
         user_timeline ->
