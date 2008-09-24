@@ -1,6 +1,10 @@
 
 -module( t_handler ).
--export( [ out/1, reformat_friends_data/1, merge_by_date/1, date_from_message/1, msg_date_to_local/1 ] ).
+-export( [ out/1,
+           tfm/1,
+           reformat_friends_data/1,
+           sort_messages/1,
+           msg_date_to_local/1 ] ).
 -include( "yaws_api.hrl" ).
 -include( "dorkinator.hrl" ).
 
@@ -68,9 +72,9 @@ viewer_handler( A, Px ) ->
                         { ok, AuthInfo } ->
                             Twitter_data = reformat_friends_data( friends_timeline( [ { service, twitter }, { auth, AuthInfo } ] ) ),
                             Identica_data = reformat_friends_data( friends_timeline( [ { service, identica }, { auth, AuthInfo } ] ) ),
+                            All_messages = sort_messages( lists:append( Twitter_data, Identica_data ) ),
                             { html, Px:page( "viewer", [
-                                                        { twittermessages, Twitter_data },
-                                                        { identicamessages, Identica_data }
+                                                        { twittermessages, All_messages }
                                                        ] ) };
                         _ ->
                             { redirect, "/t/setup" }
@@ -140,28 +144,17 @@ reformat_friends_data( [ Element | Rest ] ) ->
                 { value, { <<"id">>, Id } } ->
                     case lists:keysearch( list_to_binary( "text" ), 1, List ) of
                         { value, { <<"text">>, Text } } ->
+                            { value, { <<"created_at">>, Date } } = lists:keysearch( list_to_binary( "created_at" ), 1, List ),
                             lists:append( [[
-                                            { id, Id },
-                                            { text, Text },
-                                            { picture, element_from_user( List, <<"profile_image_url">> ) },
-                                            { name, element_from_user( List, <<"name">> ) },
-                                            { created, lists:keysearch( list_to_binary( "created_at" ), 1, List ) }
-                                           ]], reformat_friends_data( Rest ))
+                                                 { id, Id },
+                                                 { text, Text },
+                                                 { picture, element_from_user( List, <<"profile_image_url">> ) },
+                                                 { name, element_from_user( List, <<"name">> ) },
+                                                 { created, binary_to_list( Date ) }
+                                                ]], reformat_friends_data( Rest ))
                     end
             end
     end.
-
-merge_by_date( [] ) ->
-    [];
-merge_by_date( [ Element | Rest ] ) ->
-    { struct, Entry } = Element,
-    case lists:keysearch( <<"created_at">>, 1, Entry ) of
-        { value, { _, X } } ->
-            io:format( "~p~n", [ binary_to_list( X ) ] );
-        _ ->
-            io:format( "Noes~n" )
-    end,
-    merge_by_date( Rest ).
 
 element_from_user( Message, Element ) ->
     case lists:keysearch( <<"user">>, 1, Message ) of
@@ -169,17 +162,6 @@ element_from_user( Message, Element ) ->
             case lists:keysearch( Element, 1, UserList ) of
                 { value, { Element, User } } ->
                     binary_to_list( User )
-            end
-    end.
-
-date_from_message( Message ) ->
-    case Message of
-        { struct, Entry } ->
-            case lists:keysearch( <<"created_at">>, 1, Entry ) of
-                { value, { _, X } } ->
-                    X;
-                _ ->
-                    { error, date_not_found }
             end
     end.
 
@@ -193,3 +175,26 @@ msg_date_to_local( Date ) ->
                     { error, unparsable }
             end
     end.
+
+tfm( Message ) ->
+    case lists:keysearch( created, 1, Message ) of
+        { value, { created, Date } } ->
+            case string:tokens( Date, " " ) of
+                [ _, _, Day, Time, _, _ ] ->
+                    Day ++ lists:merge( string:tokens( Time, ":" ) );
+                _ ->
+                    io:format( "No time: ~p~n", [ Date ] ),
+                    []
+            end;
+        _ ->
+            io:format( "No Date? ~p~n", [ Message ] ),
+            []
+    end.
+
+sort_messages( [] ) ->
+    [];
+sort_messages( [ H | T ] ) ->
+    sort_messages( [ X || X <- T,
+                          tfm( X ) < tfm( H ) ] ) ++ [ H ] ++ sort_messages( [ X || X <- T,
+                                                                                    tfm( X ) >= tfm( H ) ] ).
+
