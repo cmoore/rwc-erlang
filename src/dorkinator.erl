@@ -8,7 +8,8 @@
           s_init/0,
           s_store/2,
           s_find/1,
-          build_templates/0
+          build_templates/0,
+          single_message/0
          ] ).
 
 -include( "yaws.hrl" ).
@@ -78,3 +79,8 @@ s_find( Login ) ->
 build_templates() ->
     TemplateList = [ "tweet", "header", "footer", "index", "catastrophic","setup", "qdirect", "viewer" ],
     [ erlydtl_compiler:compile( "./templates/" ++ X ++ ".html", X, [ { out_dir, "./ebin" } ] ) || X <- TemplateList ].
+
+single_message() ->
+    lwtc:setup( [ { login, "hydo" }, { password, "h4r01d" } ] ),
+    [ Px | _ ] = lwtc:request( "hydo", friends_timeline ),
+    Px.

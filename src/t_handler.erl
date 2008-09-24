@@ -3,8 +3,7 @@
 -export( [ out/1,
            tfm/1,
            reformat_friends_data/1,
-           sort_messages/1,
-           msg_date_to_local/1 ] ).
+           sort_messages/1  ] ).
 -include( "yaws_api.hrl" ).
 -include( "dorkinator.hrl" ).
 
@@ -74,7 +73,7 @@ viewer_handler( A, Px ) ->
                             Identica_data = reformat_friends_data( friends_timeline( [ { service, identica }, { auth, AuthInfo } ] ) ),
                             All_messages = sort_messages( lists:append( Twitter_data, Identica_data ) ),
                             { html, Px:page( "viewer", [
-                                                        { twittermessages, All_messages }
+                                                        { twittermessages, lists:reverse( All_messages ) }
                                                        ] ) };
                         _ ->
                             { redirect, "/t/setup" }
@@ -146,12 +145,12 @@ reformat_friends_data( [ Element | Rest ] ) ->
                         { value, { <<"text">>, Text } } ->
                             { value, { <<"created_at">>, Date } } = lists:keysearch( list_to_binary( "created_at" ), 1, List ),
                             lists:append( [[
-                                                 { id, Id },
-                                                 { text, Text },
-                                                 { picture, element_from_user( List, <<"profile_image_url">> ) },
-                                                 { name, element_from_user( List, <<"name">> ) },
-                                                 { created, binary_to_list( Date ) }
-                                                ]], reformat_friends_data( Rest ))
+                                            { id, Id },
+                                            { text, Text },
+                                            { picture, element_from_user( List, <<"profile_image_url">> ) },
+                                            { name, element_from_user( List, <<"name">> ) },
+                                            { created, binary_to_list( Date ) }
+                                           ]], reformat_friends_data( Rest ))
                     end
             end
     end.
@@ -165,23 +164,16 @@ element_from_user( Message, Element ) ->
             end
     end.
 
-msg_date_to_local( Date ) ->
-    case string:tokens( binary_to_list( Date ), " " ) of
-        [ _, Mon, Dom, Time, _, Year ] ->
-            case string:tokens( Time, ":" ) of
-                [ Hour, Minute, Seconds ] ->
-                    { { Year, Mon, Dom }, { Hour, Minute, Seconds } };
-                _ ->
-                    { error, unparsable }
-            end
-    end.
-
 tfm( Message ) ->
     case lists:keysearch( created, 1, Message ) of
         { value, { created, Date } } ->
             case string:tokens( Date, " " ) of
-                [ _, _, Day, Time, _, _ ] ->
-                    Day ++ lists:merge( string:tokens( Time, ":" ) );
+                [ _, Month, Dom, Time, _, Year ] ->
+                    Ic = fun(X) ->
+                                 list_to_integer( X )
+                         end,
+                    [ H, M, S ] = string:tokens( Time, ":" ),
+                    calendar:datetime_to_gregorian_seconds( { { Ic(Year), m_t_n( Month ), Ic(Dom) }, { Ic(H), Ic(M), Ic(S) } } );
                 _ ->
                     io:format( "No time: ~p~n", [ Date ] ),
                     []
@@ -198,3 +190,20 @@ sort_messages( [ H | T ] ) ->
                           tfm( X ) < tfm( H ) ] ) ++ [ H ] ++ sort_messages( [ X || X <- T,
                                                                                     tfm( X ) >= tfm( H ) ] ).
 
+m_t_n( Month ) ->
+    Table = [
+             { "Jan", 1 },
+             { "Feb", 2 },
+             { "Mar", 3 },
+             { "Apr", 4 },
+             { "May", 5 },
+             { "Jun", 6 },
+             { "Jul", 7 },
+             { "Aug", 8 },
+             { "Sep", 9 },
+             { "Oct", 10 },
+             { "Nov", 11 },
+             { "Dec", 12 }
+            ],
+    { _, { _, Num } } = lists:keysearch( Month, 1, Table ),
+    Num.
