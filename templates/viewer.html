@@ -13,7 +13,21 @@
         <a href="/t/tweet?{{ e.id }}"><img border=0 src="{{ e.picture }}" style="width:40px;height:40px;"/></a>
       </td>
       <td>
-        {{ e.created }}<br/>
+        {% ifequal e.svc "twitter" %}
+        <a href="http://twitter.com/{{ e.screen_name }}">{{ e.name }}</a>
+        {% endifequal %}
+        {% ifequal e.svc "identica" %}
+        <a href="http://identi.ca/{{ e.screen_name }}">{{ e.name }}</a>
+        {% endifequal %}
+
+        {% ifequal e.svc "twitter" %}
+        From <a href="http://twitter.com/">twitter</a>
+        {% endifequal %}
+
+        {% ifequal e.svc "identica" %}
+        From <a href="http://identi.ca/">identi.ca</a>
+        {% endifequal %}
+        <br/>
         {{ e.text }}
       </td>
     </tr>

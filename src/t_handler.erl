@@ -2,7 +2,7 @@
 -module( t_handler ).
 -export( [ out/1,
            tfm/1,
-           reformat_friends_data/1,
+           reformat_friends_data/2,
            sort_messages/1  ] ).
 -include( "yaws_api.hrl" ).
 -include( "dorkinator.hrl" ).
@@ -24,9 +24,10 @@ out( Pf ) ->
 tweet_handler( _A, Pf ) ->
     { html, Pf:page( "tweet" ) }.
 
+% TODO - The cookie needs to never expire and this doesn't work.
 format_cookie( Sx ) ->
-    Cookie = yaws_api:new_cookie_session( Sx, (60 * 60 * 24 * 365) ),
-    yaws_api:setcookie( "dorkinator", Cookie, "/" ).
+    Cookie = yaws_api:new_cookie_session( Sx ),
+    yaws_api:setcookie( "dorkinator", Cookie, "/", "'Wed 01-01-2020 00:00:00 GMT'" ).
     
 setup_handler( A, Pf ) ->
     case (A#arg.req)#http_request.method of
@@ -69,8 +70,8 @@ viewer_handler( A, Px ) ->
                     Key = Val#session.key,
                     case kvs:lookup( Key ) of
                         { ok, AuthInfo } ->
-                            Twitter_data = reformat_friends_data( friends_timeline( [ { service, twitter }, { auth, AuthInfo } ] ) ),
-                            Identica_data = reformat_friends_data( friends_timeline( [ { service, identica }, { auth, AuthInfo } ] ) ),
+                            Twitter_data = reformat_friends_data( friends_timeline( [ { service, twitter }, { auth, AuthInfo } ] ), twitter ),
+                            Identica_data = reformat_friends_data( friends_timeline( [ { service, identica }, { auth, AuthInfo } ] ), identica ),
                             All_messages = sort_messages( lists:append( Twitter_data, Identica_data ) ),
                             { html, Px:page( "viewer", [
                                                         { twittermessages, lists:reverse( All_messages ) }
@@ -132,11 +133,11 @@ pull_service_data( Login, Password, Service, Request ) ->
 % The mochi json parser returns the keys in binary format
 % so we've got to do some interpretive dance to get erlydtl to like it.
 %
-reformat_friends_data( { error, pull_service_data_failed } ) ->
+reformat_friends_data( { error, pull_service_data_failed }, _ ) ->
     [];
-reformat_friends_data( [] ) ->
+reformat_friends_data( [], _ ) ->
     [];
-reformat_friends_data( [ Element | Rest ] ) ->
+reformat_friends_data( [ Element | Rest ], Service ) ->
     case Element of
         { struct, List } ->
             case lists:keysearch( list_to_binary( "id" ), 1, List ) of
@@ -145,12 +146,14 @@ reformat_friends_data( [ Element | Rest ] ) ->
                         { value, { <<"text">>, Text } } ->
                             { value, { <<"created_at">>, Date } } = lists:keysearch( list_to_binary( "created_at" ), 1, List ),
                             lists:append( [[
+                                            { svc, atom_to_list(Service) },
                                             { id, Id },
                                             { text, Text },
                                             { picture, element_from_user( List, <<"profile_image_url">> ) },
                                             { name, element_from_user( List, <<"name">> ) },
+                                            { screen_name, element_from_user( List, <<"screen_name">> ) },
                                             { created, binary_to_list( Date ) }
-                                           ]], reformat_friends_data( Rest ))
+                                           ]], reformat_friends_data( Rest, Service ))
                     end
             end
     end.
@@ -158,6 +161,7 @@ reformat_friends_data( [ Element | Rest ] ) ->
 element_from_user( Message, Element ) ->
     case lists:keysearch( <<"user">>, 1, Message ) of
         { value, { <<"user">>, { struct, UserList } } } ->
+            %io:format( "UserList: ~p~n", [ UserList ] ),
             case lists:keysearch( Element, 1, UserList ) of
                 { value, { Element, User } } ->
                     binary_to_list( User )

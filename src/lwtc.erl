@@ -135,7 +135,6 @@ url_for_action( Action ) ->
 url_for_action( Action, Id ) ->
     case Action of
         show ->
-            io:format( "Caught show.~n", [] ),
             case Id of
                 none ->
                     "";

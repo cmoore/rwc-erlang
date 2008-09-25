@@ -2,33 +2,34 @@
 <div class="loginblock">
   <div id="gaia_loginbox" class="body">
     <form action="/t/setup" method="POST">
-      <font style="color:#000000;">You need a twitter, identi.ca, and ping.fm account to continue.</font>
-      <div class="iphoneblock">
-        <span class="gaia le lbl">
+      <font style="color:#000000;">Twitter and identi.ca in one.<br>Passwords are stored in memory (kind of like memcache) and never written to disk or a database.</font>
+      <div>
+        <span>
           Twitter Login
         </span>
       </div>
-      <input type="text" name="twitter_login" size=18 class="gaia le val">
+      <input type="text" name="twitter_login" size=18>
       <div class="iphoneblock">
-        <span class="gaia le lbl">
+        <span>
           Twitter Password
         </span>
       </div>
-      <input type="password" name="twitter_password" size=18 class="gaia le val">
+      <input type="password" name="twitter_password" size=18>
+      <hr>
       <div class="iphoneblock">
-        <span class="gaia le lbl">
+        <span>
           Identica Login
         </span>
       </div>
-      <input type="text" name="identica_login" size=18 class="gaia le val">
+      <input type="text" name="identica_login" size=18>
       <div class="iphoneblock">
-        <span class="gaia le lbl">
+        <span>
           Identica Password
         </span>
       </div>
-      <input type="password" name="identica_password" size=18 class="gaia le val">
-      <div class="iphonesubmit">
-        <span class="gaia le button">
+      <input type="password" name="identica_password" size=18>
+      <div style="margin-top:5px;">
+        <span>
           <input type="submit" value="Send"/>
         </span>
       </div>
