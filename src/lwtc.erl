@@ -40,7 +40,7 @@
 
 -module( lwtc ).
 
--export( [ setup/1, request/2, request/3 ] ).
+-export( [ setup/1, request/3, request/2, update/3 ] ).
 
 -author( "Clint Moore <hydo@mac.com>" ).
 
@@ -57,101 +57,86 @@ setup( AuthInfo ) ->
     is_running(),
     case AuthInfo of
         [ { login, Login }, { password, Password }, { mode, twitter } ] ->
-            keyd_store( Login, [ { login, Login }, { password, Password }, { service, twitter } ] );
+            Id = Login ++ "-twitter",
+            keyd_store( Id, [ { login, Login }, { password, Password }, { service, twitter } ] ),
+            Id;
         [ { login, Login }, { password, Password }, { mode, identica } ] ->
-            keyd_store( Login, [ { password, Password }, { service, identica } ] );
+            Id = Login ++ "-identica",
+            keyd_store( Id, [ { login, Login }, { password, Password }, { service, identica } ] ),
+            Id;
         [ { login, Login }, { password, Password } ] -> % default to twitter.
-            keyd_store( Login, [ { password, Password }, { service, twitter } ] );
+            Id = Login ++ "-twitter",
+            keyd_store( Id, [ { login, Login }, { password, Password }, { service, twitter } ] ),
+            Id;
         _ ->
             false
     end.
 
-request( Login, Request ) ->
-    request( Login, Request, nil ).
+update( Identifier, Request, Args ) ->
+    case auth_from_id( Identifier ) of
+        [ { login, Login }, { password, Password }, { service, Service } ] ->
+            json_request( post, Login, Password, url_for_action( Request, Service, Args ) );
+        Tron ->
+            io:format( "Tron: ~p~n", [ Tron ] ),
+            false
+    end.
+request( Identifier, Request ) ->
+    request( Identifier, Request, "" ).
 
-% @spec ( "login_name", request ) -> List | { error, reason }
-% @doc
-% performs the requested request.(heh)
-% currently supported request atoms are
-% friends_timeline, user_timeline, public_timeline, and replies
-% support for more coming soon.
-% @end
-request( Login, Request, Id ) ->
-    try
-        List = case keyd_lookup( Login ) of
-                   { ok, X } ->
-                       X;
-                   _ ->
-                       false
-               end,
-        Service = case lists:keysearch( service, 1, List ) of
-                      { value, { service, Xp } } ->
-                          Xp;
-                      _ ->
-                          false
-                  end,
-        Url_for_action = case Id of
-                             nil ->
-                                 url_for_action( Request );
-                             Px ->
-                                 url_for_action( Request, Px )
-                         end,
-        Url = head_for_service( Service ) ++ Url_for_action,
-        Password = case lists:keysearch( password, 1, List ) of
-                       { value, { password, Pa } } ->
-                           Pa;
-                       _ ->
-                           false
-                   end,
-        json_request( Login, Password, Url )
-    catch
-        _:_ ->
-            { error, { somethings_messed_up } }
+request( Identifier, Request, Args ) ->
+    case auth_from_id( Identifier ) of
+        [ { login, Login }, { password, Password }, { service, Service } ] ->
+            json_request( get, Login, Password, url_for_action( Request, Service, Args ) );
+        _ ->
+            false
     end.
 
 %
 % End of user-serviceable parts.
 %
 
-json_request( Login, Password, Url ) ->
-    case http_auth_request( Url, Login, Password ) of
+auth_from_id( Id ) ->
+    case keyd_lookup( Id ) of
+        { ok, Info } ->
+            Info;
+        _ ->
+            false
+    end.
+json_request( post, Login, Password, Url ) ->
+    jsf( http:request( post, { Url, headers( Login, Password ) }, [], [] ) );
+json_request( get, Login, Password, Url ) ->
+    jsf( http:request( get, { Url, headers( Login, Password ) }, [], [] ) ).
+
+jsf( Result ) ->
+    case Result of
         { ok, { _, _, Result } } ->
             mochijson2:decode( Result );
-        _ ->
+        { error, Reason } ->
+            io:format( "Nose: ~p~n", [ Reason ] ),
             { error, bad_result_from_http_request }
     end.
 
-http_auth_request( Url, User, Pass ) ->
-    http:request( get, { Url, headers( User, Pass ) }, [], [] ).
 
 headers( User, Pass ) ->
     UP = base64:encode( User ++ ":" ++ Pass ),
     Basic = lists:flatten( io_lib:fwrite( "Basic ~s", [ UP ] ) ),
     [ { "User-Agent", "Dorkpatrol/0.1" }, { "Authorization", Basic } ].
 
-url_for_action( Action ) ->
-    url_for_action( Action, none ).
-
-url_for_action( Action, Id ) ->
-    case Action of
-        show ->
-            case Id of
-                none ->
-                    "";
-                _ ->
-                    "show/" ++ Id ++ ".json"
-            end;
-        friends_timeline ->
-            "friends_timeline.json";
-        user_timeline ->
-            "user_timeline.json";
-        public_timeline ->
-            "public_timeline.json";
-        replies ->
-            "replies.json";
-         _ ->
-            { error, no_such_action }
-    end.
+url_for_action( Action, Service, Args ) ->
+    Head = head_for_service( Service ),
+    Tail = case Action of
+               update ->
+                   "update.json";
+               friends_timeline ->
+                   "friends_timeline.json";
+               user_timeline ->
+                   "user_timeline.json";
+               public_timeline ->
+                   "public_timeline.json";
+               replies ->
+                   "replies.json"
+           end,
+    Head ++ Tail ++ Args.
 
 head_for_service( Service ) ->
     case Service of
