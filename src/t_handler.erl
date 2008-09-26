@@ -32,7 +32,7 @@ tweet_handler( A, _ ) ->
                                           "message"
                                           ], fun validate_field/2 ) of
                 { [ _Ipost, Tpost, Message ], [] } ->
-                    Info = auth_info( A ),
+                    Info = dorkinator:auth_info( A ),
                     case Tpost of
                         "on" ->
                             case lists:keysearch( twitter_login, 1, Info ) of
@@ -51,17 +51,12 @@ tweet_handler( A, _ ) ->
             { redirect, "/t/viewer" }
     end.
 
-% TODO - The cookie needs to never expire and this doesn't work.
-format_cookie( Sx ) ->
-    Cookie = yaws_api:new_cookie_session( Sx ),
-    yaws_api:setcookie( "dorkinator", Cookie, "/", "'Wed 01-01-2020 00:00:00 GMT'" ).
-    
 setup_handler( A, Pf ) ->
     case (A#arg.req)#http_request.method of
         'GET' ->
             { html, Pf:page( "setup" ) };
         'POST' ->
-            AuthKey = gen_key(),
+            AuthKey = dorkinator:gen_key(),
             case dorkinator:validate( A, [
                                           "twitter_login",
                                           "twitter_password",
@@ -76,7 +71,7 @@ setup_handler( A, Pf ) ->
                                          { identica_login, I_login },
                                          { identica_password, I_password }
                                         ] ),
-                    [ { html, Pf:page( "qdirect" ) }, format_cookie( #session{ key = AuthKey } ) ];
+                    [ { html, Pf:page( "qdirect" ) }, dorkinator:format_cookie( #session{ key = AuthKey } ) ];
                 _ ->
                     { html, Pf:page( "viewer", [ { error, "Something went horribly wrong." } ] ) }
             end
@@ -132,10 +127,6 @@ field_from_auth( Auth, Field ) ->
         _ ->
             null
     end.
-
-gen_key() ->
-    Key = crypto:rand_bytes( 20 ),
-    base64:encode( binary_to_list( Key ) ).
 
 pull_service_data( Login, Password, Service, Request ) ->
     case lwtc:setup( [ { login, Login }, { password, Password }, { mode, Service } ] ) of
@@ -240,19 +231,3 @@ m_t_n( Month ) ->
     Num.
 
 
-% Grabs the identifier for the current user.
-auth_info( Arg ) ->
-    H = Arg#arg.headers,
-    C = H#headers.cookie,
-    case yaws_api:find_cookie_val( "dorkinator", C ) of
-        [] ->
-            { redirect, "/t/setup" };
-        Cookie ->
-            case yaws_api:cookieval_to_opaque( Cookie ) of
-                { ok, Val } ->
-                    case kvs:lookup( Val#session.key ) of
-                        { ok, AuthInfo } ->
-                            AuthInfo
-                    end
-            end
-    end.

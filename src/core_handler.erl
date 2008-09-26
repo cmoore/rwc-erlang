@@ -23,18 +23,24 @@ out( A ) ->
 		    { content, "text/html", Px:static( Path ) }
 	    end;
 	nomatch ->
-	    case Path of
-		"" ->
-		    Px = pfactory:new( A ),
-		    { html, Px:page( "setup" ) };
-		_ ->
-		    case lists:nth( 1, string:tokens( Path, "/" ) ) of
-			"t" ->
-			    t_handler:out( pfactory:new( A ) );
-                        "u" ->
-                            u_handler:out( pfactory:new( A ) );
-			_ ->
-			    { redirect, "/" }
-		    end
-	    end
+            case dorkinator:auth_info( A ) of
+                false ->
+                    Px = pfactory:new( A ),
+                    { html, Px:page( "login" ) };
+                _ ->
+                    case Path of
+                        "" ->
+                            Px = pfactory:new( A ),
+                            { html, Px:page( "login" ) };
+                        _ ->
+                            case lists:nth( 1, string:tokens( Path, "/" ) ) of
+                                "t" ->
+                                    t_handler:out( pfactory:new( A ) );
+                                "u" ->
+                                    u_handler:out( pfactory:new( A ) );
+                                _ ->
+                                    { redirect, "/" }
+                            end
+                    end
+            end
     end.

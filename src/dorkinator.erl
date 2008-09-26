@@ -5,13 +5,13 @@
           validate/3,
           stop/0,
           halt/0,
-          s_init/0,
-          s_store/2,
-          s_find/1,
+          gen_key/0,
+          auth_info/1,
           build_templates/0,
           single_message/0,
           init_database/0,
-          rebuild_tables/0
+          rebuild_tables/0,
+          format_cookie/1
          ] ).
 
 -include( "dorkinator.hrl" ).
@@ -47,39 +47,21 @@ start() ->
     build_templates(),
     yaws_api:setconf( GC, [[ SC ]] ).
 
-validate(A, Fields, Fun) ->
-    Params = yaws_api:parse_post(A),
-    lists:foldl(
-      fun(Field, {Vals, Errs}) ->
-              case proplists:lookup(Field, Params) of
-                  none -> exit({missing_param, Field});
-                  {_, Val} ->
-                      Val1 = case Val of undefined -> ""; _ -> Val end,
-                      Acc1 =
-                          case Fun(Field, Val1) of
-                              ok ->
-                                  {[Val1 | Vals], Errs};
-                              Err ->
-                                  {[Val1 | Vals], [Err | Errs]}
-                          end,
-                      Acc1
-              end
-      end, {[], []}, lists:reverse(Fields)).
 
-s_init() ->
-    Px = ets:new( ipdsessions, [ set, public, named_table ] ),
-    ets:insert( Px, { "the_first_record", "must_be_inserted_for_some_reason" } ).
+%% s_init() ->
+%%     Px = ets:new( ipdsessions, [ set, public, named_table ] ),
+%%     ets:insert( Px, { "the_first_record", "must_be_inserted_for_some_reason" } ).
 
-s_store( Login, Auth ) ->
-    ets:insert( ipdsessions, { Login, Auth } ).
+%% s_store( Login, Auth ) ->
+%%     ets:insert( ipdsessions, { Login, Auth } ).
 
-s_find( Login ) ->
-    case ets:lookup( ipdsessions, Login ) of
-        [ { Login, Auth } ] ->
-            Auth;
-        _ ->
-            false
-    end.        
+%% s_find( Login ) ->
+%%     case ets:lookup( ipdsessions, Login ) of
+%%         [ { Login, Auth } ] ->
+%%             Auth;
+%%         _ ->
+%%             false
+%%     end.        
 
 build_templates() ->
     TemplateList = [ "login", "tweet", "header", "footer", "index", "catastrophic","setup", "qdirect", "viewer" ],
@@ -111,3 +93,60 @@ init_database() ->
                                   { disc_copies, [ node() ] },
                                   { attributes, record_info( fields, services ) }
                                  ] ).
+
+
+
+
+%
+%
+% Web Utils
+%
+%
+
+validate(A, Fields, Fun) ->
+    Params = yaws_api:parse_post(A),
+    lists:foldl(
+      fun(Field, {Vals, Errs}) ->
+              case proplists:lookup(Field, Params) of
+                  none -> exit({missing_param, Field});
+                  {_, Val} ->
+                      Val1 = case Val of undefined -> ""; _ -> Val end,
+                      Acc1 =
+                          case Fun(Field, Val1) of
+                              ok ->
+                                  {[Val1 | Vals], Errs};
+                              Err ->
+                                  {[Val1 | Vals], [Err | Errs]}
+                          end,
+                      Acc1
+              end
+      end, {[], []}, lists:reverse(Fields)).
+
+format_cookie( Px ) ->
+    Cookie = yaws_api:new_cookie_session( Px ),
+    yaws_api:setcookie( "dorkinator", Cookie, "/", "'Wed 01-01-2020 00:00:00 GMT'" ).
+
+gen_key() ->
+    Key = crypto:rand_bytes( 20 ),
+    base64:encode( binary_to_list( Key ) ).
+
+% Grabs the identifier for the current user.
+auth_info( Arg ) ->
+    H = Arg#arg.headers,
+    C = H#headers.cookie,
+    case yaws_api:find_cookie_val( "dorkinator", C ) of
+        [] ->
+            { redirect, "/u/login" };
+        Cookie ->
+            case yaws_api:cookieval_to_opaque( Cookie ) of
+                { ok, Val } ->
+                    case users:auth_confirm( Val ) of
+                        false ->
+                            { redirect, "/u/login" };
+                        Px ->
+                            Px
+                    end;
+                { error, no_session } ->
+                    false
+            end
+    end.

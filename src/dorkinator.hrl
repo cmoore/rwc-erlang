@@ -4,6 +4,5 @@
 -endif.
 
 -record( session, { key } ).
--record( users, { service_key, login, password } ).
+-record( users, { login, password, service_key, auth } ).
 -record( services, { username, password, service, service_key } ).
-
