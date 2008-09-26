@@ -39,11 +39,8 @@
 %
 
 -module( lwtc ).
-
 -export( [ setup/1, request/3, request/2, update/3 ] ).
-
 -author( "Clint Moore <hydo@mac.com>" ).
-
 -version( "0.5" ).
 
 % @spec ( [ 
@@ -59,15 +56,15 @@ setup( AuthInfo ) ->
         [ { login, Login }, { password, Password }, { mode, twitter } ] ->
             Id = Login ++ "-twitter",
             keyd_store( Id, [ { login, Login }, { password, Password }, { service, twitter } ] ),
-            Id;
+            { ok, Id };
         [ { login, Login }, { password, Password }, { mode, identica } ] ->
             Id = Login ++ "-identica",
             keyd_store( Id, [ { login, Login }, { password, Password }, { service, identica } ] ),
-            Id;
+            { ok, Id };
         [ { login, Login }, { password, Password } ] -> % default to twitter.
             Id = Login ++ "-twitter",
             keyd_store( Id, [ { login, Login }, { password, Password }, { service, twitter } ] ),
-            Id;
+            { ok, Id };
         _ ->
             false
     end.
@@ -75,14 +72,17 @@ setup( AuthInfo ) ->
 update( Identifier, Request, Args ) ->
     case auth_from_id( Identifier ) of
         [ { login, Login }, { password, Password }, { service, Service } ] ->
+            io:format( "URL For Action: ~p~n", [ url_for_action( Request, Service, Args ) ] ),
             json_request( post, Login, Password, url_for_action( Request, Service, Args ) );
-        Tron ->
+        % "Hot hand in a dice game, baby-girl.  Six-on
+        % straight talkin' 'bout klackity-klackity-klackity."
+        Tron ->            
             io:format( "Tron: ~p~n", [ Tron ] ),
             false
     end.
+
 request( Identifier, Request ) ->
     request( Identifier, Request, "" ).
-
 request( Identifier, Request, Args ) ->
     case auth_from_id( Identifier ) of
         [ { login, Login }, { password, Password }, { service, Service } ] ->
@@ -102,6 +102,7 @@ auth_from_id( Id ) ->
         _ ->
             false
     end.
+
 json_request( post, Login, Password, Url ) ->
     jsf( http:request( post, { Url, headers( Login, Password ) }, [], [] ) );
 json_request( get, Login, Password, Url ) ->
@@ -109,13 +110,12 @@ json_request( get, Login, Password, Url ) ->
 
 jsf( Result ) ->
     case Result of
-        { ok, { _, _, Result } } ->
-            mochijson2:decode( Result );
+        { ok, { _, _, Res } } ->
+            mochijson2:decode( Res );
         { error, Reason } ->
             io:format( "Nose: ~p~n", [ Reason ] ),
             { error, bad_result_from_http_request }
     end.
-
 
 headers( User, Pass ) ->
     UP = base64:encode( User ++ ":" ++ Pass ),
@@ -136,7 +136,8 @@ url_for_action( Action, Service, Args ) ->
                replies ->
                    "replies.json"
            end,
-    Head ++ Tail ++ Args.
+    Nargs = yaws_api:url_encode( Args ),
+    Head ++ Tail ++ "?status=" ++ Nargs.
 
 head_for_service( Service ) ->
     case Service of

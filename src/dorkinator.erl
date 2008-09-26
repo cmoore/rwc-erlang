@@ -9,9 +9,12 @@
           s_store/2,
           s_find/1,
           build_templates/0,
-          single_message/0
+          single_message/0,
+          init_database/0,
+          rebuild_tables/0
          ] ).
 
+-include( "dorkinator.hrl" ).
 -include( "yaws.hrl" ).
 -include( "yaws_api.hrl" ).
 -include_lib( "stdlib/include/qlc.hrl" ).
@@ -38,6 +41,8 @@ start() ->
                  appmods = [ { "/", core_handler } ]
                 },
     kvs:start(),
+    mnesia:start(),
+    % mnesia:wait_for_tables( [  services, users ], 2000 ),
     erlydtl:create_parser(),
     build_templates(),
     yaws_api:setconf( GC, [[ SC ]] ).
@@ -77,10 +82,32 @@ s_find( Login ) ->
     end.        
 
 build_templates() ->
-    TemplateList = [ "tweet", "header", "footer", "index", "catastrophic","setup", "qdirect", "viewer" ],
+    TemplateList = [ "login", "tweet", "header", "footer", "index", "catastrophic","setup", "qdirect", "viewer" ],
     [ erlydtl_compiler:compile( "./templates/" ++ X ++ ".html", X, [ { out_dir, "./ebin" } ] ) || X <- TemplateList ].
 
 single_message() ->
-    lwtc:setup( [ { login, "hydo" }, { password, "h4r01d" } ] ),
-    [ Px | _ ] = lwtc:request( "hydo", friends_timeline ),
-    Px.
+    case lwtc:setup( [ { login, "hydo" }, { password, "m1n3rv4" } ] ) of
+        { ok, Id } ->
+            [ Px | _ ] = lwtc:request( Id, friends_timeline ),
+            Px;
+        _ ->
+            false
+    end.
+
+rebuild_tables() ->
+    mnesia:delete_table( users ),
+    mnesia:delete_table( services ),
+    init_database().
+
+init_database() ->
+    mnesia:stop(),
+    mnesia:create_schema( [ node() ] ),
+    mnesia:start(),
+    mnesia:create_table( users, [
+                                 { disc_copies, [ node() ] },
+                                 { attributes, record_info( fields, users ) }
+                                ] ),
+    mnesia:create_table( services, [
+                                  { disc_copies, [ node() ] },
+                                  { attributes, record_info( fields, services ) }
+                                 ] ).

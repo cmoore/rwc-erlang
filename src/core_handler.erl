@@ -31,6 +31,8 @@ out( A ) ->
 		    case lists:nth( 1, string:tokens( Path, "/" ) ) of
 			"t" ->
 			    t_handler:out( pfactory:new( A ) );
+                        "u" ->
+                            u_handler:out( pfactory:new( A ) );
 			_ ->
 			    { redirect, "/" }
 		    end

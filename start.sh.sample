@@ -7,9 +7,12 @@ YAWS_DIR="/usr/local/lib/yaws"
 # option especially if you want to run more than
 # one of these at the same time.
 NAME="dorkinator@elguapo.local"
+MNESIA_DIR="\"db\""
+echo "Using $MNESIA_DIR"
 
 mkdir -p log
 mkdir -p ebin
+mkdir -p db
 
 OPTIONS="-pa $YAWS_DIR -pa $YAWS_DIR/include -pa $YAWS_DIR/ebin $THIS_DIR/ebin"
 
@@ -19,5 +22,7 @@ if [ $? -ne 0 ]; then exit; fi
 
 erl -setcookie monster \
     -pa $YAWS_DIR -pa $YAWS_DIR/include -pa $YAWS_DIR/ebin $THIS_DIR/ebin \
+    -mnesia dir $MNESIA_DIR \
+    -mnesia auto_repair true \
     -yaws embedded true -s dorkinator -name $NAME
 

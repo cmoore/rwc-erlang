@@ -15,14 +15,41 @@ out( Pf ) ->
             setup_handler( A, Pf );
         "t/viewer" ->
             viewer_handler( A, Pf );
-        "t/tweet" ->
+        "t/post" ->
             tweet_handler( A, Pf );
         _ ->
             { html, Pf:page( "index" ) }
     end.
 
-tweet_handler( _A, Pf ) ->
-    { html, Pf:page( "tweet" ) }.
+tweet_handler( A, _ ) ->
+    case( A#arg.req)#http_request.method of
+        'GET' ->
+            { redirect, "/t/viewer" };
+        'POST' ->
+            case dorkinator:validate( A, [
+                                          "post_identica",
+                                          "post_twitter",
+                                          "message"
+                                          ], fun validate_field/2 ) of
+                { [ _Ipost, Tpost, Message ], [] } ->
+                    Info = auth_info( A ),
+                    case Tpost of
+                        "on" ->
+                            case lists:keysearch( twitter_login, 1, Info ) of
+                                { _, { twitter_login, Tlogin } } ->
+                                    case lists:keysearch( twitter_password, 1, Info ) of
+                                        { _, { twitter_password, TPass } } ->
+                                            case lwtc:setup( [ { login, Tlogin }, { password, TPass }, { mode, twitter } ] ) of
+                                                { ok, Id } ->
+                                                    io:format( "Using Id: ~p~n", [ Id ] ),
+                                                    lwtc:update( Id, update, Message )
+                                            end
+                                    end
+                            end
+                    end
+            end,
+            { redirect, "/t/viewer" }
+    end.
 
 % TODO - The cookie needs to never expire and this doesn't work.
 format_cookie( Sx ) ->
@@ -112,8 +139,8 @@ gen_key() ->
 
 pull_service_data( Login, Password, Service, Request ) ->
     case lwtc:setup( [ { login, Login }, { password, Password }, { mode, Service } ] ) of
-        true ->
-            Px = lwtc:request( Login, Request ),
+        { ok, Id } ->
+            Px = lwtc:request( Id, Request ),
             case Px of
                 { error, _ } ->
                     { error, lwtc_errored_out };
@@ -211,3 +238,21 @@ m_t_n( Month ) ->
             ],
     { _, { _, Num } } = lists:keysearch( Month, 1, Table ),
     Num.
+
+
+% Grabs the identifier for the current user.
+auth_info( Arg ) ->
+    H = Arg#arg.headers,
+    C = H#headers.cookie,
+    case yaws_api:find_cookie_val( "dorkinator", C ) of
+        [] ->
+            { redirect, "/t/setup" };
+        Cookie ->
+            case yaws_api:cookieval_to_opaque( Cookie ) of
+                { ok, Val } ->
+                    case kvs:lookup( Val#session.key ) of
+                        { ok, AuthInfo } ->
+                            AuthInfo
+                    end
+            end
+    end.

@@ -1,12 +1,33 @@
 {% include "header.html" %}
 
+<script type="text/javascript">
+    function toggle_chxbox( Name ) {
+        var Fx = document.getElementById( Name );
+        if ( Fx ) {
+            if ( Fx.checked ) {
+                Fx.checked = false;
+            } else {
+                Fx.checked = true;
+            }
+        }
+    }
+</script>
 <form method="POST" action="/t/post">
-  <input type="text" name="message"/>
-  <input type="submit" value="send"/>
+  <div style="text-align:center;margin-top:4px;">
+    <input with="100%" type="text" name="message"/><input type=submit value="Post"/>
+    <br/>
+    <span onclick="toggle_chxbox('tchbx');">
+      <b>Twitter:</b><input id="tchbx" type="checkbox" name="post_twitter" checked/>
+    </span>
+    <span onclick="toggle_chxbox('ichbx');">
+      <b>Identica:</b><input id="ichbx" type="checkbox" name="post_identica" checked>
+    </span>
+  </div>
 </form>
+
 <br/>
 {% for e in twittermessages %}
-<div style="margin:2px;background-color:white;border:1px solid grey;">
+<div style="margin-bottom:2px;background-color:white;border:1px solid grey;">
   <table>
     <tr>
       <td>
