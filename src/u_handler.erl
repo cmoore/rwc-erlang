@@ -29,6 +29,7 @@ login_handler( A, Pf ) ->
                     case users:find_user( Login, Password ) of
                         [ { users, Login, Password, _, _ } ] ->
                             % login was successful
+                            io:format( "Login ok.~n" ),
                             AuthKey = dorkinator:gen_key(),
                             users:update_user( Login, Password, AuthKey ),
                             [ { html, Pf:page( "qdirect" ) }, dorkinator:format_cookie( #session{ key = AuthKey } ) ];

@@ -136,7 +136,7 @@ auth_info( Arg ) ->
     C = H#headers.cookie,
     case yaws_api:find_cookie_val( "dorkinator", C ) of
         [] ->
-            { redirect, "/u/login" };
+            false;
         Cookie ->
             case yaws_api:cookieval_to_opaque( Cookie ) of
                 { ok, Val } ->

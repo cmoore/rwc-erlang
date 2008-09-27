@@ -3,6 +3,7 @@
 -export( [ out/1,
            tfm/1,
            reformat_friends_data/2,
+           urlize/2,
            sort_messages/1  ] ).
 -include( "yaws_api.hrl" ).
 -include( "dorkinator.hrl" ).
@@ -166,7 +167,7 @@ reformat_friends_data( [ Element | Rest ], Service ) ->
                             lists:append( [[
                                             { svc, atom_to_list(Service) },
                                             { id, Id },
-                                            { text, Text },
+                                            { text, urlize(Text, Service) },
                                             { picture, element_from_user( List, <<"profile_image_url">> ) },
                                             { name, element_from_user( List, <<"name">> ) },
                                             { screen_name, element_from_user( List, <<"screen_name">> ) },
@@ -231,3 +232,33 @@ m_t_n( Month ) ->
     Num.
 
 
+urlize( Message, Service ) ->
+    list_to_binary(
+      string:join( [ yoorl( X, Service ) || X <- string:tokens( binary_to_list(Message), " " ) ], " " )
+     ).
+
+yoorl( X, Service ) ->
+    Vx = case regexp:match( X, "^@" ) of
+             { match, _, _ } ->
+                 { ok, Tx, _ } = regexp:sub( X, "^@", "" ),
+                 Fv = case regexp:sub( Tx, ":$", "" ) of
+                          { badmatch, _, _ } ->
+                              Tx;
+                          { ok, Gl, _ } ->
+                              Gl
+                      end,
+                 case Service of
+                     twitter ->
+                         "<a href=\"http://www.twitter.com/" ++ Fv ++ "\">" ++ X ++ "</a>";
+                     identica ->                                   
+                         "<a href=\"http://identi.ca/" ++ Fv ++ "\">" ++ X ++ "</a>"
+                 end;
+             _ ->
+                 X
+         end,
+    case regexp:match( Vx, "^http://" ) of
+        { match, _, _ } ->
+            "<a href=\"" ++ Vx ++ "\">" ++ Vx ++ "</a>";
+        _ ->
+            Vx
+    end.

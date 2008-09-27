@@ -111,7 +111,12 @@ json_request( get, Login, Password, Url ) ->
 jsf( Result ) ->
     case Result of
         { ok, { _, _, Res } } ->
-            mochijson2:decode( Res );
+            case Res of
+                "Could not authenticate you." ->
+                    "";
+                _ ->
+                    mochijson2:decode( Res )
+            end;
         { error, Reason } ->
             io:format( "Nose: ~p~n", [ Reason ] ),
             { error, bad_result_from_http_request }
