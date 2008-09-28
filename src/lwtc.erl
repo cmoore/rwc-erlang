@@ -39,9 +39,10 @@
 %
 
 -module( lwtc ).
--export( [ setup/1, request/3, request/2, update/3, nrequest/4 ] ).
+-export( [ setup/1, request/3, request/2, update/2, nrequest/4 ] ).
 -author( "Clint Moore <hydo@mac.com>" ).
 -version( "0.5" ).
+-include( "dorkinator.hrl" ).
 
 % @spec ( [ 
 %          { login, "login_name" },
@@ -69,27 +70,34 @@ setup( AuthInfo ) ->
             false
     end.
 
-update( Identifier, Request, Args ) ->
-    case auth_from_id( Identifier ) of
-        [ { login, Login }, { password, Password }, { service, Service } ] ->
-            io:format( "URL For Action: ~p~n", [ url_for_action( Request, Service, Args ) ] ),
-            json_request( post, Login, Password, url_for_action( Request, Service, Args ) );
-        % "Hot hand in a dice game, baby-girl.  Six-on
-        % straight talkin' 'bout klackity-klackity-klackity."
-        Tron ->            
-            io:format( "Tron: ~p~n", [ Tron ] ),
-            false
-    end.
+update( Info, Message ) ->
+    Stat = "status=" ++ yaws_api:url_encode( Message ),
+    Url = url_for_action( update, Info#services.service ),
+    io:format( "URL: ~p~n", [ Url ] ),
+    http:request( post,
+                  { url_for_action( update, Info#services.service ),
+                    headers( Info#services.username, Info#services.password ),
+                    "application/x-www-form-urlencoded",
+                    Stat }, [], [] ).
+
+%%     case auth_from_id( Identifier ) of
+%%         [ { login, Login }, { password, Password }, { service, Service } ] ->
+%%             json_request( post, Login, Password, url_for_action( Request, Service, Args ) );
+%%         % "Hot hand in a dice game, baby-girl.  Six-on
+%%         % straight talkin' 'bout klackity-klackity-klackity."
+%%         Tron ->            
+%%             false
+%%     end.
 
 nrequest( Login, Password, Service, Request ) ->
-    json_request( get, Login, Password, url_for_action( Request, Service, [] ) ).
+    json_request( get, Login, Password, url_for_action( Request, Service ) ).
 
 request( Identifier, Request ) ->
     request( Identifier, Request, "" ).
-request( Identifier, Request, Args ) ->
+request( Identifier, Request, _Args ) ->
     case auth_from_id( Identifier ) of
         [ { login, Login }, { password, Password }, { service, Service } ] ->
-            json_request( get, Login, Password, url_for_action( Request, Service, Args ) );
+            json_request( get, Login, Password, url_for_action( Request, Service ) );
         _ ->
             false
     end.
@@ -109,7 +117,6 @@ auth_from_id( Id ) ->
 json_request( post, Login, Password, Url ) ->
     jsf( http:request( post, { Url, headers( Login, Password ) }, [], [] ) );
 json_request( get, Login, Password, Url ) ->
-    io:format( "URL: ~p~n", [ Url ] ),
     jsf( http:request( get, { Url, headers( Login, Password ) }, [], [] ) ).
 
 jsf( Result ) ->
@@ -122,8 +129,7 @@ jsf( Result ) ->
                     mochijson2:decode( Res )
             end;
         { error, Reason } ->
-            io:format( "Nose: ~p~n", [ Reason ] ),
-            { error, bad_result_from_http_request }
+            { error, Reason }
     end.
 
 headers( User, Pass ) ->
@@ -131,7 +137,7 @@ headers( User, Pass ) ->
     Basic = lists:flatten( io_lib:fwrite( "Basic ~s", [ UP ] ) ),
     [ { "User-Agent", "Dorkpatrol/0.1" }, { "Authorization", Basic } ].
 
-url_for_action( Action, Service, Args ) ->
+url_for_action( Action, Service ) ->
     Head = head_for_service( Service ),
     Tail = case Action of
                update ->
@@ -145,16 +151,7 @@ url_for_action( Action, Service, Args ) ->
                replies ->
                    "replies.json"
            end,
-    Nargs = yaws_api:url_encode( Args ),
-    Gt = fun( X ) ->
-                 case X of
-                     update ->
-                         "?status=" ++ Nargs;
-                     _ ->
-                         ""
-                 end
-         end,
-    Head ++ Tail ++ Gt( Action ).
+    Head ++ Tail.
 
 head_for_service( Service ) ->
     case list_to_atom(Service) of

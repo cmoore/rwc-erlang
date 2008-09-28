@@ -31,7 +31,6 @@ login_handler( A, Pf ) ->
                             { html, Pf:page( "login", [ { error, "Bad login/password." } ] ) };
                         Px ->
                             % login was successful
-                            io:format( "Login ok.~n" ),
                             AuthKey = dorkinator:gen_key(),
                             users:update_auth( Px#users.login, AuthKey ),
                             [ { html, Pf:page( "qdirect" ) }, dorkinator:format_cookie( #session{ key = AuthKey } ) ]

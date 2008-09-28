@@ -26,39 +26,33 @@ out( Pf ) ->
     end.
 
 tweet_handler( A, _ ) ->
-    case( A#arg.req)#http_request.method of
-        'GET' ->
-            { redirect, "/t/viewer" };
-        'POST' ->
-            case dorkinator:validate( A, [
-                                          "post_identica",
-                                          "post_twitter",
-                                          "message"
-                                          ], fun validate_field/2 ) of
-                { [ _Ipost, Tpost, Message ], [] } ->
-                    Info = dorkinator:auth_info( A ),
-                    case Tpost of
-                        "on" ->
-                            case lists:keysearch( twitter_login, 1, Info ) of
-                                { _, { twitter_login, Tlogin } } ->
-                                    case lists:keysearch( twitter_password, 1, Info ) of
-                                        { _, { twitter_password, TPass } } ->
-                                            case lwtc:setup( [ { login, Tlogin }, { password, TPass }, { mode, twitter } ] ) of
-                                                { ok, Id } ->
-                                                    io:format( "Using Id: ~p~n", [ Id ] ),
-                                                    lwtc:update( Id, update, Message )
-                                            end
-                                    end
+    case dorkinator:auth_info( A ) of
+        false ->
+            { redirect, "/u/login" };
+        Px ->
+            case( A#arg.req)#http_request.method of
+                'GET' ->
+                    { redirect, "/t/viewer" };
+                'POST' ->
+                    case dorkinator:validate( A, [
+                                                  "post_identica",
+                                                  "post_twitter",
+                                                  "message"
+                                                 ], fun validate_field/2 ) of
+                        { [ _Ipost, Tpost, Message ], [] } ->
+                            case Tpost of
+                                "on" ->
+                                    Rc = services:cred_for_service( Px#users.login, "twitter" ),
+                                    lwtc:update( Rc, Message ),
+                                    { redirect, "/t/viewer" }
                             end
                     end
-            end,
-            { redirect, "/t/viewer" }
+            end
     end.
 
 delete_service( A, _Pf ) ->
     case dorkinator:auth_info( A ) of
         false ->
-            io:format( "No auth info.~n" ),
             { redirect, "/u/login" };
         _Px ->
             case ( A#arg.req)#http_request.method of
@@ -67,44 +61,33 @@ delete_service( A, _Pf ) ->
                 'POST' ->
                     case dorkinator:validate( A, [ "svc" ], fun validate_field/2 ) of
                         { [ Service ], [] } ->
-                            io:format( "Service: ~p~n", [ Service ] ),
-                            Vt = services:delete( Service ),
-                            io:format( "Delete result: ~p~n", [ Vt ] ),
+                            services:delete( Service ),
                             { redirect, "/t/setup" }
                     end
             end
     end.
 
 setup_handler( A, Pf ) ->
-    log:f( "setup_handler" ),
     case dorkinator:auth_info( A ) of
         false ->
-            io:format( "No auth info.~n" ),
             { redirect, "/u/login" };
-        Px ->
-            log:f( "Auth info came back." ),
-            [ Info | _ ] = Px,
+        Info ->
             case (A#arg.req)#http_request.method of
                 'GET' ->
-                    log:f( "GET" ),
                     { html, Pf:page( "setup", [
                                                { services, reformat_services( services:by_user( Info#users.login ) ) }
                                               ] ) };
                 'POST' ->
-                    log:f( "POST" ),
                     case dorkinator:validate( A, [
                                                   "account_type",
                                                   "acct_login",
                                                   "acct_password"
                                                  ], fun validate_field/2 ) of
                         { [ Type, Login, Password ], [] } ->
-                            io:format( "All is well.~n" ),
                             services:add_service( Info#users.login, Login, Password, Type ),
                             { html, Pf:page( "setup", [
                                                        { services, reformat_services( services:by_user( Info#users.login ) ) }
-                                                      ] ) };
-                        _ ->
-                            log:f( "Something." )
+                                                      ] ) }
                     end
             end
     end.
@@ -132,15 +115,13 @@ viewer_handler( A, Px ) ->
     case dorkinator:auth_info( A ) of
         false ->
             { redirect, "/u/login" };
-        Vt ->
-            [ Vx | _ ] = Vt,
+        Vx ->
             All_Messages = sort_messages( rfmt( services:by_user( Vx#users.login ) ) ),
             { html, Px:page( "viewer", [
                                         { twittermessages, lists:reverse( All_Messages ) } ] ) }
     end.
 
 pull_service_data( Login, Password, Service, Request ) ->
-    io:format( "Service: ~p~n", [ Service ] ),
     Px = lwtc:nrequest( Login, Password, Service, Request ),
     case Px of
         { error, _ } ->
@@ -188,7 +169,6 @@ reformat_friends_data( [ Element | Rest ], Service ) ->
 element_from_user( Message, Element ) ->
     case lists:keysearch( <<"user">>, 1, Message ) of
         { value, { <<"user">>, { struct, UserList } } } ->
-            %io:format( "UserList: ~p~n", [ UserList ] ),
             case lists:keysearch( Element, 1, UserList ) of
                 { value, { Element, User } } ->
                     binary_to_list( User )
@@ -206,11 +186,9 @@ tfm( Message ) ->
                     [ H, M, S ] = string:tokens( Time, ":" ),
                     calendar:datetime_to_gregorian_seconds( { { Ic(Year), m_t_n( Month ), Ic(Dom) }, { Ic(H), Ic(M), Ic(S) } } );
                 _ ->
-                    io:format( "No time: ~p~n", [ Date ] ),
                     []
             end;
         _ ->
-            io:format( "No Date? ~p~n", [ Message ] ),
             []
     end.
 
