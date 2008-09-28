@@ -1,40 +1,27 @@
 {% include "header.html" %}
-<div class="loginblock">
-  <div id="gaia_loginbox" class="body">
-    <form action="/t/setup" method="POST">
-      <font style="color:#000000;">Twitter and identi.ca in one.<br>Passwords are stored in memory (kind of like memcache) and never written to disk or a database.</font>
-      <div>
-        <span>
-          Twitter Login
-        </span>
-      </div>
-      <input type="text" name="twitter_login" size=18>
-      <div class="iphoneblock">
-        <span>
-          Twitter Password
-        </span>
-      </div>
-      <input type="password" name="twitter_password" size=18>
-      <hr>
-      <div class="iphoneblock">
-        <span>
-          Identica Login
-        </span>
-      </div>
-      <input type="text" name="identica_login" size=18>
-      <div class="iphoneblock">
-        <span>
-          Identica Password
-        </span>
-      </div>
-      <input type="password" name="identica_password" size=18>
-      <div style="margin-top:5px;">
-        <span>
-          <input type="submit" value="Send"/>
-        </span>
-      </div>
-    </form>
-  </div>
+<div style="font-weight:bold;">
+  Add an account
+  <form method="POST" action="/t/setup">
+    <table style="width:200px;border:1px solid grey;">
+      <tr><td>Type</td><td>
+        <select name="account_type">
+          <option value="twitter"/>twitter
+          <option value="identica"/>identi.ca
+        </select>
+      </td></tr>
+      <tr><td>Login</td><td><input type="text" name="acct_login"></td></tr>
+      <tr><td>Password</td><td><input type="text" name="acct_password"></td></tr>
+      <tr><td><input type="submit" value="Save"/></td></tr>
+    </table>
+  </form>
+  <table style="width:200px;margin-top:5px;border:1px solid grey;">
+    <tr><td>Service</td><td>Login</td></tr>
+    {% for e in services %}
+      <form method="POST" action="/t/delete_service">
+        <input type="hidden" name="svc" value="{{ e.idx }}">
+        <tr><td>{{ e.service }}</td><td>{{ e.login }}</td><td><input type="submit" value="X"></td></tr>
+      </form>
+    {% endfor %}
+  </table>
 </div>
 {% include "footer.html" %}
-

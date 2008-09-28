@@ -5,4 +5,4 @@
 
 -record( session, { key } ).
 -record( users, { login, password, service_key, auth } ).
--record( services, { username, password, service, service_key } ).
+-record( services, { idx, username, password, service, service_key } ).

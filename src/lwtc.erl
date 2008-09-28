@@ -39,7 +39,7 @@
 %
 
 -module( lwtc ).
--export( [ setup/1, request/3, request/2, update/3 ] ).
+-export( [ setup/1, request/3, request/2, update/3, nrequest/4 ] ).
 -author( "Clint Moore <hydo@mac.com>" ).
 -version( "0.5" ).
 
@@ -81,6 +81,9 @@ update( Identifier, Request, Args ) ->
             false
     end.
 
+nrequest( Login, Password, Service, Request ) ->
+    json_request( get, Login, Password, url_for_action( Request, Service, [] ) ).
+
 request( Identifier, Request ) ->
     request( Identifier, Request, "" ).
 request( Identifier, Request, Args ) ->
@@ -106,6 +109,7 @@ auth_from_id( Id ) ->
 json_request( post, Login, Password, Url ) ->
     jsf( http:request( post, { Url, headers( Login, Password ) }, [], [] ) );
 json_request( get, Login, Password, Url ) ->
+    io:format( "URL: ~p~n", [ Url ] ),
     jsf( http:request( get, { Url, headers( Login, Password ) }, [], [] ) ).
 
 jsf( Result ) ->
@@ -142,10 +146,18 @@ url_for_action( Action, Service, Args ) ->
                    "replies.json"
            end,
     Nargs = yaws_api:url_encode( Args ),
-    Head ++ Tail ++ "?status=" ++ Nargs.
+    Gt = fun( X ) ->
+                 case X of
+                     update ->
+                         "?status=" ++ Nargs;
+                     _ ->
+                         ""
+                 end
+         end,
+    Head ++ Tail ++ Gt( Action ).
 
 head_for_service( Service ) ->
-    case Service of
+    case list_to_atom(Service) of
         twitter ->
             "http://www.twitter.com/statuses/";
         identica ->

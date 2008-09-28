@@ -3,6 +3,7 @@
 -export( [ out/1,
            tfm/1,
            reformat_friends_data/2,
+           reformat_services/1,
            urlize/2,
            sort_messages/1  ] ).
 -include( "yaws_api.hrl" ).
@@ -12,6 +13,8 @@ out( Pf ) ->
     A = Pf:server_args(),
     Path = A#arg.appmoddata,
     case Path of
+        "t/delete_service" ->
+            delete_service( A, Pf );
         "t/setup" ->
             setup_handler( A, Pf );
         "t/viewer" ->
@@ -52,100 +55,105 @@ tweet_handler( A, _ ) ->
             { redirect, "/t/viewer" }
     end.
 
-setup_handler( A, Pf ) ->
-    case (A#arg.req)#http_request.method of
-        'GET' ->
-            { html, Pf:page( "setup" ) };
-        'POST' ->
-            AuthKey = dorkinator:gen_key(),
-            case dorkinator:validate( A, [
-                                          "twitter_login",
-                                          "twitter_password",
-                                          "identica_login",
-                                          "identica_password"
-                                         ], fun validate_field/2 ) of
+delete_service( A, _Pf ) ->
+    case dorkinator:auth_info( A ) of
+        false ->
+            io:format( "No auth info.~n" ),
+            { redirect, "/u/login" };
+        _Px ->
+            case ( A#arg.req)#http_request.method of
+                'GET' ->
+                    { redirect, "/t/setup" };
+                'POST' ->
+                    case dorkinator:validate( A, [ "svc" ], fun validate_field/2 ) of
+                        { [ Service ], [] } ->
+                            io:format( "Service: ~p~n", [ Service ] ),
+                            Vt = services:delete( Service ),
+                            io:format( "Delete result: ~p~n", [ Vt ] ),
+                            { redirect, "/t/setup" }
+                    end
+            end
+    end.
 
-                { [ T_login, T_password, I_login, I_password ], [] } ->
-                    kvs:store( AuthKey, [
-                                         { twitter_login, T_login },
-                                         { twitter_password, T_password },
-                                         { identica_login, I_login },
-                                         { identica_password, I_password }
-                                        ] ),
-                    [ { html, Pf:page( "qdirect" ) }, dorkinator:format_cookie( #session{ key = AuthKey } ) ];
-                _ ->
-                    { html, Pf:page( "viewer", [ { error, "Something went horribly wrong." } ] ) }
+setup_handler( A, Pf ) ->
+    log:f( "setup_handler" ),
+    case dorkinator:auth_info( A ) of
+        false ->
+            io:format( "No auth info.~n" ),
+            { redirect, "/u/login" };
+        Px ->
+            log:f( "Auth info came back." ),
+            [ Info | _ ] = Px,
+            case (A#arg.req)#http_request.method of
+                'GET' ->
+                    log:f( "GET" ),
+                    { html, Pf:page( "setup", [
+                                               { services, reformat_services( services:by_user( Info#users.login ) ) }
+                                              ] ) };
+                'POST' ->
+                    log:f( "POST" ),
+                    case dorkinator:validate( A, [
+                                                  "account_type",
+                                                  "acct_login",
+                                                  "acct_password"
+                                                 ], fun validate_field/2 ) of
+                        { [ Type, Login, Password ], [] } ->
+                            io:format( "All is well.~n" ),
+                            services:add_service( Info#users.login, Login, Password, Type ),
+                            { html, Pf:page( "setup", [
+                                                       { services, reformat_services( services:by_user( Info#users.login ) ) }
+                                                      ] ) };
+                        _ ->
+                            log:f( "Something." )
+                    end
             end
     end.
 
 validate_field( _X, _Y ) ->
     ok.
 
-viewer_handler( A, Px ) ->
-    H = A#arg.headers,
-    C = H#headers.cookie,
-    case yaws_api:find_cookie_val( "dorkinator", C ) of
-        [] ->
-            { redirect, "/t/setup" };
-        Cookie ->
-            case yaws_api:cookieval_to_opaque( Cookie ) of
-                { ok, Val } ->
-                    Key = Val#session.key,
-                    case kvs:lookup( Key ) of
-                        { ok, AuthInfo } ->
-                            Twitter_data = reformat_friends_data( friends_timeline( [ { service, twitter }, { auth, AuthInfo } ] ), twitter ),
-                            Identica_data = reformat_friends_data( friends_timeline( [ { service, identica }, { auth, AuthInfo } ] ), identica ),
-                            All_messages = sort_messages( lists:append( Twitter_data, Identica_data ) ),
-                            { html, Px:page( "viewer", [
-                                                        { twittermessages, lists:reverse( All_messages ) }
-                                                       ] ) };
-                        _ ->
-                            { redirect, "/t/setup" }
-                    end;
-                { error, no_session } ->
-                    { redirect, "/t/setup" }
-            end
-    end.
-
-friends_timeline( Info ) ->
-    case Info of
-        [ { service, Service }, { auth, AuthInfo } ] ->
-            case pull_service_data(
-                   field_from_auth( AuthInfo, list_to_atom(atom_to_list(Service) ++ "_login") ),
-                   field_from_auth( AuthInfo, list_to_atom(atom_to_list(Service) ++ "_password") ),
-                   Service, friends_timeline ) of
-                { error, _ } ->
-                    { error, pull_service_data_failed };
-                Px ->
-                    Px
-            end
-    end.
-
-field_from_auth( Auth, Field ) ->
-    case lists:keysearch( Field, 1, Auth ) of
-        { value, { Field, Value } } ->
-            Value;
+sym( Svc ) ->
+    case Svc of
+        "identi.ca" ->
+            "identica";
         _ ->
-            null
+            Svc
+    end.
+
+rfmt( [] ) ->
+    [];
+rfmt( [ Svc | Rst ] ) ->
+    lists:append( reformat_friends_data( pull_service_data(
+                                           Svc#services.username,
+                                           Svc#services.password,
+                                           sym(Svc#services.service),
+                                           friends_timeline ), sym( Svc#services.service ) ), rfmt( Rst ) ).
+viewer_handler( A, Px ) ->
+    case dorkinator:auth_info( A ) of
+        false ->
+            { redirect, "/u/login" };
+        Vt ->
+            [ Vx | _ ] = Vt,
+            All_Messages = sort_messages( rfmt( services:by_user( Vx#users.login ) ) ),
+            { html, Px:page( "viewer", [
+                                        { twittermessages, lists:reverse( All_Messages ) } ] ) }
     end.
 
 pull_service_data( Login, Password, Service, Request ) ->
-    case lwtc:setup( [ { login, Login }, { password, Password }, { mode, Service } ] ) of
-        { ok, Id } ->
-            Px = lwtc:request( Id, Request ),
-            case Px of
-                { error, _ } ->
-                    { error, lwtc_errored_out };
-                { struct, Fv } ->
-                    case lists:keysearch( list_to_binary( "error" ), 1, Fv ) of
+    io:format( "Service: ~p~n", [ Service ] ),
+    Px = lwtc:nrequest( Login, Password, Service, Request ),
+    case Px of
+        { error, _ } ->
+            { error, lwtc_errored_out };
+        { struct, Fv } ->
+            case lists:keysearch( list_to_binary( "error" ), 1, Fv ) of
                         { value, _ } ->
-                            { error, lwtc_errored_out };
-                        _ ->
-                            Px
-                    end;
-                Ft ->
-                    Ft
-            end
+                    { error, lwtc_errored_out };
+                _ ->
+                    Px
+            end;
+        Ft ->
+            Ft
     end.
 
 %
@@ -165,7 +173,7 @@ reformat_friends_data( [ Element | Rest ], Service ) ->
                         { value, { <<"text">>, Text } } ->
                             { value, { <<"created_at">>, Date } } = lists:keysearch( list_to_binary( "created_at" ), 1, List ),
                             lists:append( [[
-                                            { svc, atom_to_list(Service) },
+                                            { svc, Service },
                                             { id, Id },
                                             { text, urlize(Text, Service) },
                                             { picture, element_from_user( List, <<"profile_image_url">> ) },
@@ -248,9 +256,9 @@ yoorl( X, Service ) ->
                               Gl
                       end,
                  case Service of
-                     twitter ->
+                    "twitter" ->
                          "<a href=\"http://www.twitter.com/" ++ Fv ++ "\">" ++ X ++ "</a>";
-                     identica ->                                   
+                     "identica" ->                                   
                          "<a href=\"http://identi.ca/" ++ Fv ++ "\">" ++ X ++ "</a>"
                  end;
              _ ->
@@ -261,4 +269,12 @@ yoorl( X, Service ) ->
             "<a href=\"" ++ Vx ++ "\">" ++ Vx ++ "</a>";
         _ ->
             Vx
+    end.
+
+reformat_services( [] ) ->
+    [];
+reformat_services( [ Px | Rst ] ) ->
+    case Px of 
+        { services, Idx, Login, _, Service, _ } ->
+            lists:append( [[ { idx, Idx }, { login, Login }, { service, Service } ]], reformat_services( Rst ) )
     end.

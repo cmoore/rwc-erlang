@@ -139,7 +139,8 @@ auth_info( Arg ) ->
             false;
         Cookie ->
             case yaws_api:cookieval_to_opaque( Cookie ) of
-                { ok, Val } ->
+                { ok, { session, Val } } ->
+                    io:format( "Val: ~p~n", [ Val ] ),
                     case users:auth_confirm( Val ) of
                         false ->
                             { redirect, "/u/login" };

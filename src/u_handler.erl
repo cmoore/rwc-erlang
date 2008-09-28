@@ -27,14 +27,14 @@ login_handler( A, Pf ) ->
                                           ], fun validate_field/2 ) of
                 { [ Login, Password ], [] } ->
                     case users:find_user( Login, Password ) of
-                        [ { users, Login, Password, _, _ } ] ->
+                        [] ->
+                            { html, Pf:page( "login", [ { error, "Bad login/password." } ] ) };
+                        Px ->
                             % login was successful
                             io:format( "Login ok.~n" ),
                             AuthKey = dorkinator:gen_key(),
-                            users:update_user( Login, Password, AuthKey ),
-                            [ { html, Pf:page( "qdirect" ) }, dorkinator:format_cookie( #session{ key = AuthKey } ) ];
-                        _ ->
-                            { html, Pf:page( "login", [ { error, "Bad login/password." } ] ) }
+                            users:update_auth( Px#users.login, AuthKey ),
+                            [ { html, Pf:page( "qdirect" ) }, dorkinator:format_cookie( #session{ key = AuthKey } ) ]
                     end
             end
     end.

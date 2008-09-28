@@ -5,9 +5,9 @@
           find_user/1,
           find_user/2,
           add_user/2,
-          update_user/3,
-          update_user/2,
           delete_user/1,
+          service_key/1,
+          update_auth/2,
           auth_confirm/1
          ] ).
 -include_lib( "stdlib/include/qlc.hrl" ).
@@ -26,18 +26,20 @@ find_user( Username ) ->
 find_user( Login, Password ) ->
     case Password of
         none ->
-            e(
-              qlc:q(
-                [ X || X <- mnesia:table(users),
-                       X#users.login =:= Login ]
-               ) );
+            [ Px | _ ] = e(
+                           qlc:q(
+                             [ X || X <- mnesia:table(users),
+                                    X#users.login =:= Login ]
+                            ) ),
+            Px;
         _ ->
-            e(
-              qlc:q(
-                [ X || X <- mnesia:table( users ),
-                       X#users.login =:= Login,
-                       X#users.password =:= Password ]
-                ) )
+            [ Px | _ ] = e(
+                           qlc:q(
+                             [ X || X <- mnesia:table( users ),
+                                    X#users.login =:= Login,
+                                    X#users.password =:= Password ]
+                            ) ),
+            Px
     end.
     
 %
@@ -49,43 +51,18 @@ add_user( Login, Password, Auth ) ->
     User = #users{
       login = Login,
       password = Password,
-      service_key = Auth
+      service_key = dorkinator:gen_key(),
+      auth = Auth
      },
     mnesia:transaction( fun() ->
                                 mnesia:write( User )
                         end ).
 
-% (update user)
-update_user( Login, Password ) ->
-    update_user( Login, Password, no ).
-update_user( Login, Password, Auth ) ->
-    case find_user( Login ) of
-        [ #users{ login = _, password = _, service_key = ServiceKey, auth = OldAuth } ] ->
-            Px = #users{
-              login = Login,
-              password = Password,
-              service_key = ServiceKey },
-            Pxx = case Auth of
-                      no ->
-                          Px#users{auth = OldAuth};
-                      _ ->
-                          Px#users{auth = Auth}
-                  end,
-            mnesia:transaction( fun() ->
-                                        mnesia:write( Pxx )
-                                end )
-    end.
-
 delete_user( Login ) ->
-    case find_user( Login ) of
-        [ { users, Login, _, _, _ } ] ->
-            Rx = #users{ login = Login },
-            mnesia:transaction( fun() ->
-                                        mnesia:delete( Rx )
-                                end );
-        _ ->
-            { error, no_such_user }
-    end.
+    Px = find_user( Login ),
+    mnesia:transaction( fun() ->
+                                mnesia:delete( { users, Px } )
+                        end ).
 
 auth_confirm( Auth ) ->
    case e( qlc:q( [ X || X <- mnesia:table(users),
@@ -96,3 +73,18 @@ auth_confirm( Auth ) ->
        Px ->
            Px
    end.
+
+service_key( Login ) ->
+    Px = find_user( Login ),
+    Px#users.service_key.
+
+update_auth( Login, Auth ) ->
+    case users:find_user( Login ) of
+        [] ->
+            false;
+        Px ->
+            Fv = Px#users{ auth = Auth },
+            mnesia:transaction( fun() ->
+                                        mnesia:write( Fv )
+                                end )
+    end.
