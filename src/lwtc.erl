@@ -72,8 +72,6 @@ setup( AuthInfo ) ->
 
 update( Info, Message ) ->
     Stat = "status=" ++ yaws_api:url_encode( Message ),
-    Url = url_for_action( update, Info#services.service ),
-    io:format( "URL: ~p~n", [ Url ] ),
     http:request( post,
                   { url_for_action( update, Info#services.service ),
                     headers( Info#services.username, Info#services.password ),
@@ -90,7 +88,6 @@ update( Info, Message ) ->
 %%     end.
 
 nrequest( Login, Password, Service, Request ) ->
-    io:format( "URL: ~p~n", [ url_for_action( Request, Service ) ] ),
     NoGo = case Service of
                "identica" ->
                    case Request of

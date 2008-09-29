@@ -26,20 +26,14 @@ find_user( Username ) ->
 find_user( Login, Password ) ->
     case Password of
         none ->
-            [ Px | _ ] = e(
-                           qlc:q(
-                             [ X || X <- mnesia:table(users),
-                                    X#users.login =:= Login ]
-                            ) ),
-            Px;
+            e( qlc:q( [ X || X <- mnesia:table(users), X#users.login =:= Login ] ) );
         _ ->
-            [ Px | _ ] = e(
-                           qlc:q(
-                             [ X || X <- mnesia:table( users ),
-                                    X#users.login =:= Login,
-                                    X#users.password =:= Password ]
-                            ) ),
-            Px
+            e(
+              qlc:q(
+                [ X || X <- mnesia:table( users ),
+                       X#users.login =:= Login,
+                       X#users.password =:= Password ]
+               ) )
     end.
     
 %
@@ -75,14 +69,15 @@ auth_confirm( Auth ) ->
    end.
 
 service_key( Login ) ->
-    Px = find_user( Login ),
+    [ Px | _ ] = find_user( Login ),
     Px#users.service_key.
 
 update_auth( Login, Auth ) ->
     case users:find_user( Login ) of
         [] ->
             false;
-        Px ->
+        Vx ->
+            [ Px | _ ] = Vx,
             Fv = Px#users{ auth = Auth },
             mnesia:transaction( fun() ->
                                         mnesia:write( Fv )

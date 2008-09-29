@@ -29,12 +29,14 @@ login_handler( A, Pf ) ->
                     case users:find_user( Login, Password ) of
                         [] ->
                             { html, Pf:page( "login", [ { error, "Bad login/password." } ] ) };
-                        Px ->
-                            % login was successful
+                        Vx ->
+                            [ Px | _ ] = Vx,
                             AuthKey = dorkinator:gen_key(),
                             users:update_auth( Px#users.login, AuthKey ),
                             [ { html, Pf:page( "qdirect" ) }, dorkinator:format_cookie( #session{ key = AuthKey } ) ]
-                    end
+                    end;
+                _ ->
+                    { html, Pf:page( "login", [{error,"Bad login/password."}])}
             end
     end.
 
