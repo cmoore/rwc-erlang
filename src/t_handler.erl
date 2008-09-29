@@ -207,26 +207,6 @@ reformat_friends_data( [ Element | Rest ], Service ) ->
             end
     end.
 
-lks( Term, List ) ->
-    case lists:keysearch( list_to_binary( Term ), 1, List ) of
-        { value, { _, Px } } ->
-            Px;
-        _ ->
-            false
-    end.
-
-reformat_direct_messages( [] ) ->
-    [];
-reformat_direct_messages( [ Msg | Rst ] ) ->
-    case Msg of
-        { struct, List } ->
-            lists:append( [[
-                            { svc, "twitter" },
-                            { id, lks( "id", List ) },
-                            { text, lks( "text", List ) },
-                            { picture, lks( "picture", List ) } ]] )
-    end.
-
 element_from_user( Message, Element ) ->
     case lists:keysearch( <<"user">>, 1, Message ) of
         { value, { <<"user">>, { struct, UserList } } } ->
@@ -303,11 +283,23 @@ yoorl( X, Service ) ->
              _ ->
                  X
          end,
-    case regexp:match( Vx, "^http://" ) of
+    Urlized = case regexp:match( Vx, "^http://" ) of
+                   { match, _, _ } ->
+                       "<a href=\"" ++ Vx ++ "\">" ++ Vx ++ "</a>";
+                   _ ->
+                       Vx
+               end,
+    case regexp:match( Urlized, "^#" ) of
         { match, _, _ } ->
-            "<a href=\"" ++ Vx ++ "\">" ++ Vx ++ "</a>";
+            case Service of
+                "identica" ->
+                    { ok, Fx, _ } = regexp:sub( Urlized, "^#", "" ),
+                    "<a href=\"http://identi.ca/tag/" ++ Fx ++ "\">" ++ Urlized ++ "</a>";
+                _ ->
+                    Urlized
+            end;
         _ ->
-            Vx
+            Urlized
     end.
 
 reformat_services( [] ) ->
