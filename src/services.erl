@@ -47,7 +47,7 @@ delete( Idx ) ->
                         end ).
 
 cred_for_service( Login, Service ) ->
-    Us = users:find_user( Login ),
+    [ Us | _ ] = users:find_user( Login ),
     [ Px | _ ] = e(
                    qlc:q(
                      [ X || X <- mnesia:table( services ),

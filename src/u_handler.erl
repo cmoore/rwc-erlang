@@ -26,7 +26,6 @@ login_handler( A, Pf ) ->
                                           "password"
                                           ], fun validate_field/2 ) of
                 { [ Login, Password ], [] } ->
-                    io:format( "LOGIN: ~p ~p~n", [ Login, Password ] ),
                     case users:find_user( Login, Password ) of
                         [] ->
                             { html, Pf:page( "login", [ { error, "Bad login/password." } ] ) };
