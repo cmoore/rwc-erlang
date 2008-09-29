@@ -64,7 +64,7 @@ start() ->
 %%     end.        
 
 build_templates() ->
-    TemplateList = [ "login", "tweet", "header", "footer", "index", "catastrophic","setup", "qdirect", "viewer" ],
+    TemplateList = [ "about", "login", "tweet", "header", "footer", "index", "catastrophic","setup", "qdirect", "viewer" ],
     [ erlydtl_compiler:compile( "./templates/" ++ X ++ ".html", X, [ { out_dir, "./ebin" } ] ) || X <- TemplateList ].
 
 single_message() ->

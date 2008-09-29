@@ -13,9 +13,9 @@ Basic Tags
  */
 body {
     color: #e3e3e3;
-    font: 10px/150% Verdana, Arial, Sans-Serif;
-    font-size: 20px;
-    background-color: #4a525a;
+    font-family: Verdana, Arial, Sans-Serif;
+    font-size: 12px;
+    background-color: #3e3833;
 }
 a {
     color: #e3e3e3;
@@ -24,10 +24,22 @@ a {
 }
 
 a:hover {
-    color: #e3e3e3;
-    background-color:#606870;
+    color: #F8FFDD;
+    /*background-color:#606870; */
 }
 
+/* margin-bottom:2px;background-color:#6F5A06;border:1px solid grey; */
+.message {
+	background-color: #706d69;
+	margin-bottom:2px;
+	border:1px solid #F8FFFD;
+	color: #FFCC00;
+	font-size:14px;
+}
+/* style="text-align:center;margin-top:4px;padding:4px;" */
+.newtweet{
+	text-align:center;
+}
 /*
 The End of Basic's
 */
@@ -62,9 +74,9 @@ Special Function Tags
 .footer a:link { color: #e3e3e3; font-size: inherit;}
 
 td {
-    font-size: 40px;
+    font-size: 16px;
 }
 input {
-    font-size: 40px;
+    font-size: 16px;
 }
 

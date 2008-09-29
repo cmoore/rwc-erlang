@@ -90,7 +90,24 @@ update( Info, Message ) ->
 %%     end.
 
 nrequest( Login, Password, Service, Request ) ->
-    json_request( get, Login, Password, url_for_action( Request, Service ) ).
+    io:format( "URL: ~p~n", [ url_for_action( Request, Service ) ] ),
+    NoGo = case Service of
+               "identica" ->
+                   case Request of
+                       direct_messages ->
+                           yes;
+                       _ ->
+                           no
+                   end;
+               _ ->
+                   no
+           end,
+    case NoGo of
+        yes ->
+            [];
+        _ ->
+            json_request( get, Login, Password, url_for_action( Request, Service ) )
+    end.
 
 request( Identifier, Request ) ->
     request( Identifier, Request, "" ).
@@ -140,25 +157,27 @@ headers( User, Pass ) ->
 url_for_action( Action, Service ) ->
     Head = head_for_service( Service ),
     Tail = case Action of
+               direct_messages ->
+                   "direct_messages.json";
                update ->
-                   "update.json";
+                   "statuses/update.json";
                friends_timeline ->
-                   "friends_timeline.json";
+                   "statuses/friends_timeline.json";
                user_timeline ->
-                   "user_timeline.json";
+                   "statuses/user_timeline.json";
                public_timeline ->
-                   "public_timeline.json";
+                   "statuses/public_timeline.json";
                replies ->
-                   "replies.json"
+                   "statuses/replies.json"
            end,
     Head ++ Tail.
 
 head_for_service( Service ) ->
     case list_to_atom(Service) of
         twitter ->
-            "http://www.twitter.com/statuses/";
+            "http://www.twitter.com/";
         identica ->
-            "http://identi.ca/api/statuses/";
+            "http://identi.ca/api/";
         _ ->
             { error, no_such_service }
     end.

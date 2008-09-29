@@ -1,8 +1,10 @@
 
 -module( services ).
--export( [ e/1, add_service/4, for_user/1, delete/1, by_user/1, cred_for_service/2 ] ).
+-export( [ e/1, add_service/4, for_user/1, delete/1, by_user/1, cred_for_service/2, all/0 ] ).
+
 -include_lib( "stdlib/include/qlc.hrl" ).
 -include( "dorkinator.hrl" ).
+
 e( Query ) ->
     { atomic, Val } = mnesia:transaction( fun() ->
                                                   qlc:e( Query ) end ),
@@ -52,3 +54,8 @@ cred_for_service( Login, Service ) ->
                             X#services.service_key =:= Us#users.service_key,
                             X#services.service =:= Service ] ) ),
     Px.
+
+all() ->
+    e(
+      qlc:q(
+        [ X || X <- mnesia:table( services ) ] ) ).

@@ -11,10 +11,14 @@
             }
         }
     }
+    function toggle_size( size ) {
+      document.getElementById( 'texty' ).style.fontSize = size;
+    }
 </script>
+<br/>
 <form method="POST" action="/t/post">
-  <div style="text-align:center;margin-top:4px;">
-    <input with="100%" type="text" name="message"/><input type=submit value="Post"/>
+  <div class="newtweet">
+    <input id="texty" onfocus="toggle_size('20px')" onblur="toggle_size('16px')" style="font-size:16px;" type="text" name="message"/>&nbsp;<input type=submit value="Post"/>
     <br/>
     <span onclick="toggle_chxbox('tchbx');">
       <b>Twitter:</b><input id="tchbx" type="checkbox" name="post_twitter" checked/>
@@ -22,12 +26,13 @@
     <span onclick="toggle_chxbox('ichbx');">
       <b>Identica:</b><input id="ichbx" type="checkbox" name="post_identica" checked>
     </span>
+    <br/>
   </div>
 </form>
 
 <br/>
 {% for e in twittermessages %}
-<div style="margin-bottom:2px;background-color:white;border:1px solid grey;">
+<div class="message">
   <table>
     <tr>
       <td>
@@ -42,11 +47,11 @@
         {% endifequal %}
 
         {% ifequal e.svc "twitter" %}
-        From <a href="http://twitter.com/">twitter</a>
+        from <a href="http://twitter.com/">twitter</a>
         {% endifequal %}
 
         {% ifequal e.svc "identica" %}
-        From <a href="http://identi.ca/">identi.ca</a>
+        from <a href="http://identi.ca/">identi.ca</a>
         {% endifequal %}
         <br/>
         {{ e.text }}

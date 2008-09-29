@@ -4,6 +4,7 @@
            tfm/1,
            reformat_friends_data/2,
            reformat_services/1,
+           remove_non_twitter/1,
            urlize/2,
            sort_messages/1  ] ).
 -include( "yaws_api.hrl" ).
@@ -13,6 +14,10 @@ out( Pf ) ->
     A = Pf:server_args(),
     Path = A#arg.appmoddata,
     case Path of
+        "t/public" ->
+            public_handler( A, Pf );
+        "t/direct" ->
+            direct_handler( A, Pf );
         "t/delete_service" ->
             delete_service( A, Pf );
         "t/setup" ->
@@ -39,13 +44,18 @@ tweet_handler( A, _ ) ->
                                                   "post_twitter",
                                                   "message"
                                                  ], fun validate_field/2 ) of
-                        { [ _Ipost, Tpost, Message ], [] } ->
+                        { [ Ipost, Tpost, Message ], [] } ->
                             case Tpost of
                                 "on" ->
                                     Rc = services:cred_for_service( Px#users.login, "twitter" ),
-                                    lwtc:update( Rc, Message ),
-                                    { redirect, "/t/viewer" }
-                            end
+                                    lwtc:update( Rc, Message )
+                            end,
+                            case Ipost of
+                                "on" ->
+                                    Pc = services:cred_for_service( Px#users.login, "identica" ),
+                                    lwtc:update( Pc, Message )
+                            end,
+                            { redirect, "/t/viewer" }
                     end
             end
     end.
@@ -103,20 +113,51 @@ sym( Svc ) ->
             Svc
     end.
 
-rfmt( [] ) ->
+rfmt( [], _Type ) ->
     [];
-rfmt( [ Svc | Rst ] ) ->
+rfmt( [ Svc | Rst ], Type ) ->
     lists:append( reformat_friends_data( pull_service_data(
                                            Svc#services.username,
                                            Svc#services.password,
                                            sym(Svc#services.service),
-                                           friends_timeline ), sym( Svc#services.service ) ), rfmt( Rst ) ).
+                                           Type ), sym( Svc#services.service ) ), rfmt( Rst, Type ) ).
+
+remove_non_twitter( [] ) ->
+    [];
+remove_non_twitter( [ Sv | Rst ] ) ->
+    case Sv#services.service of
+        "twitter" ->
+            lists:append( [ [ Sv ] ], remove_non_twitter( Rst ) );
+        _ ->
+            lists:append( [ [ ] ], remove_non_twitter( Rst ) )
+    end.
+
+public_handler( A, Px ) ->
+    case dorkinator:auth_info( A ) of
+        false ->
+            { redirect, "/u/login" };
+        Vx ->
+            Msg = [ reformat_friends_data(lwtc:nrequest( X#services.username, X#services.password, X#services.service, public_timeline ), X#services.service ) ||
+                      X <- services:by_user( Vx#users.login ) ],
+            { html, Px:page( "viewer", [ { twittermessages, lists:reverse( Msg ) } ] ) }
+    end.
+
+direct_handler( A, Px ) ->
+    case dorkinator:auth_info( A ) of
+        false ->
+            { redirect, "/u/login" };
+        Vx ->
+            Msg = [ lwtc:nrequest( X#services.username, X#services.password, X#services.service, direct_messages ) ||
+                      X <- lists:flatten( remove_non_twitter( services:by_user( Vx#users.login ) ) ) ],
+            { html, Px:page( "viewer", [ { twittermessages, lists:reverse( Msg ) } ] ) }
+    end.
+
 viewer_handler( A, Px ) ->
     case dorkinator:auth_info( A ) of
         false ->
             { redirect, "/u/login" };
         Vx ->
-            All_Messages = sort_messages( rfmt( services:by_user( Vx#users.login ) ) ),
+            All_Messages = sort_messages( rfmt( services:by_user( Vx#users.login ), friends_timeline ) ),
             { html, Px:page( "viewer", [
                                         { twittermessages, lists:reverse( All_Messages ) } ] ) }
     end.
@@ -164,6 +205,26 @@ reformat_friends_data( [ Element | Rest ], Service ) ->
                                            ]], reformat_friends_data( Rest, Service ))
                     end
             end
+    end.
+
+lks( Term, List ) ->
+    case lists:keysearch( list_to_binary( Term ), 1, List ) of
+        { value, { _, Px } } ->
+            Px;
+        _ ->
+            false
+    end.
+
+reformat_direct_messages( [] ) ->
+    [];
+reformat_direct_messages( [ Msg | Rst ] ) ->
+    case Msg of
+        { struct, List } ->
+            lists:append( [[
+                            { svc, "twitter" },
+                            { id, lks( "id", List ) },
+                            { text, lks( "text", List ) },
+                            { picture, lks( "picture", List ) } ]] )
     end.
 
 element_from_user( Message, Element ) ->
