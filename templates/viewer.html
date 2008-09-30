@@ -11,14 +11,11 @@
             }
         }
     }
-    function toggle_size( size ) {
-      document.getElementById( 'texty' ).style.fontSize = size;
-    }
 </script>
 <br/>
 <form method="POST" action="/t/post">
   <div class="newtweet">
-    <input id="texty" onfocus="toggle_size('20px')" onblur="toggle_size('16px')" style="font-size:16px;" type="text" name="message"/>&nbsp;<input type=submit value="Post"/>
+    <input id="texty" style="font-size:18px;" type="text" name="message"/>&nbsp;<input type=submit value="Post"/>
     <br/>
     <span onclick="toggle_chxbox('tchbx');"><b>Twitter:</b></span><input id="tchbx" type="checkbox" name="post_twitter" checked/>
     <span onclick="toggle_chxbox('ichbx');"><b>Identica:</b></span><input id="ichbx" type="checkbox" name="post_identica" checked>

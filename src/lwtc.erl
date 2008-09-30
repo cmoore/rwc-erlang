@@ -71,7 +71,7 @@ setup( AuthInfo ) ->
     end.
 
 update( Info, Message ) ->
-    Stat = "status=" ++ yaws_api:url_encode( Message ),
+    Stat = "source=" ++ yaws_api:url_encode( "royalewithcheese" ) ++ "&status=" ++ yaws_api:url_encode( Message ),
     http:request( post,
                   { url_for_action( update, Info#services.service ),
                     headers( Info#services.username, Info#services.password ),
