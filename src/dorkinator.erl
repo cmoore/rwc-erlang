@@ -94,9 +94,6 @@ init_database() ->
                                   { attributes, record_info( fields, services ) }
                                  ] ).
 
-
-
-
 %
 %
 % Web Utils
@@ -142,7 +139,7 @@ auth_info( Arg ) ->
                 { ok, { session, Val } } ->
                     case users:auth_confirm( Val ) of
                         false ->
-                            { redirect, "/u/login" };
+                            false;
                         Px ->
                             [ Vt | _ ] = Px,
                             Vt

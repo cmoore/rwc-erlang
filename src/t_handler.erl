@@ -39,24 +39,25 @@ tweet_handler( A, _ ) ->
                 'GET' ->
                     { redirect, "/t/viewer" };
                 'POST' ->
-                    case dorkinator:validate( A, [
-                                                  "post_identica",
-                                                  "post_twitter",
-                                                  "message"
-                                                 ], fun validate_field/2 ) of
-                        { [ Ipost, Tpost, Message ], [] } ->
-                            case Tpost of
-                                "on" ->
-                                    Rc = services:cred_for_service( Px#users.login, "twitter" ),
-                                    lwtc:update( Rc, Message )
-                            end,
-                            case Ipost of
-                                "on" ->
+                    Args = [ { list_to_atom( X ),Y } || {X,Y}<- yaws_api:parse_post( A ) ],
+                    case lists:keysearch( message, 1, Args ) of
+                        { value, { message, Message } } ->
+                            case lists:keysearch( post_identica, 1, Args ) of
+                                { value, { _, _ } } ->
                                     Pc = services:cred_for_service( Px#users.login, "identica" ),
-                                    lwtc:update( Pc, Message )
+                                    lwtc:update( Pc, Message );
+                                _ ->
+                                    none
                             end,
-                            { redirect, "/t/viewer" }
-                    end
+                            case lists:keysearch( post_twitter, 1, Args ) of
+                                { value, { _, _ } } ->
+                                    Rc = services:cred_for_service( Px#users.login, "twitter" ),
+                                    lwtc:update( Rc, Message );
+                                _ ->
+                                    none
+                            end
+                    end,
+                    { redirect, "/t/viewer" }
             end
     end.
 
@@ -157,9 +158,10 @@ viewer_handler( A, Px ) ->
         false ->
             { redirect, "/u/login" };
         Vx ->
-            All_Messages = sort_messages( rfmt( services:by_user( Vx#users.login ), friends_timeline ) ),
-            { html, Px:page( "viewer", [
-                                        { twittermessages, lists:reverse( All_Messages ) } ] ) }
+            All_Messages = lists:append(
+                             rfmt( services:by_user( Vx#users.login ), replies ),
+                             rfmt( services:by_user( Vx#users.login ), friends_timeline ) ),
+            { html, Px:page( "viewer", [ { twittermessages, lists:reverse( sort_messages( All_Messages ) ) } ] ) }
     end.
 
 pull_service_data( Login, Password, Service, Request ) ->
