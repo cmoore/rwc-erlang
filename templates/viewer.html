@@ -5,19 +5,19 @@
         var i = 0;
         var Fx = document.getElementsByTagName( 'div' );
         if ( Fx[0].style.width == "" ) {
-            for ( i = 0; i < Fx.length; i++ ) {
-                Fx[i].style.width = "350px";
-            }
-            document.getElementById('const').innerHTML = "<b>Unconstrain</b>";
+            /*for ( i = 0; i < Fx.length; i++ ) {
+                Fx[i].style.width = "375px";
+            }*/
+            document.getElementById('const').innerHTML = "<b>[Verbose]</b>";
             Vx = document.getElementsByName('longname');
             for ( var x = 0; x < Vx.length; x++ ) {
                 Vx[x].style.display = "none";
             }
         } else {
-            for ( i = 0; i < Fx.length; i++ ) {
+            /*for ( i = 0; i < Fx.length; i++ ) {
                 Fx[i].style.width = null;
-            }
-            document.getElementById('const').innerHTML = "<b>Constrain</b>";
+            }*/
+            document.getElementById('const').innerHTML = "<b>[Brief]</b>";
             Vx = document.getElementsByName('longname');
             for ( var x = 0; x < Vx.length; x++ ) {
                 Vx[x].style.display = "";
@@ -38,15 +38,14 @@
 <br/>
 <form method="POST" action="/t/post">
   <div class="newtweet">
-    <input id="texty" style="font-size:18px;" type="text" name="message"/>&nbsp;<input type=submit value="Post"/>
+    <span style="width:100%"><input id="texty" maxlength="139" style="font-size:18px;" type="text" name="message"/>&nbsp;<input type=submit value="Post"/></span>
     <br/>
-    <span onclick="toggle_chxbox('tchbx');"><b>Twitter:</b></span><input id="tchbx" type="checkbox" name="post_twitter" checked/>
-    <span onclick="toggle_chxbox('ichbx');"><b>Identica:</b></span><input id="ichbx" type="checkbox" name="post_identica" checked>
+      <span class="servicebox" onclick="toggle_chxbox('tchbx');"><b>Twitter:</b></span><input id="tchbx" type="checkbox" name="post_twitter" checked/>
+      <span class="servicebox" onclick="toggle_chxbox('ichbx');"><b>Identica:</b></span><input id="ichbx" type="checkbox" name="post_identica" checked>
     <br/>
   </div>
 </form>
 
-<br/>
 {% for e in twittermessages %}
 <div class="message">
   <table>

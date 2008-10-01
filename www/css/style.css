@@ -34,7 +34,7 @@ a:hover {
 	margin-bottom:2px;
 	border:1px solid darkgrey;
 	color: #FFCC00;
-	font-size:14px;
+	font-size:10px;
 }
 /* style="text-align:center;margin-top:4px;padding:4px;" */
 .newtweet{
@@ -83,4 +83,12 @@ input {
 .about {
     width: 350px;
     background-color: #706d69;
+}
+
+.accesstext {
+    font-size: 10px;
+}
+.servicebox {
+    font-size: 9px;
+    margin-top:12px;
 }
