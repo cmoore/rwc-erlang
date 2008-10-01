@@ -1,29 +1,6 @@
 {% include "header.html" %}
 
 <script type="text/javascript">
-    function constrain() {
-        var i = 0;
-        var Fx = document.getElementsByTagName( 'div' );
-        if ( Fx[0].style.width == "" ) {
-            /*for ( i = 0; i < Fx.length; i++ ) {
-                Fx[i].style.width = "375px";
-            }*/
-            document.getElementById('const').innerHTML = "<b>[Verbose]</b>";
-            Vx = document.getElementsByName('longname');
-            for ( var x = 0; x < Vx.length; x++ ) {
-                Vx[x].style.display = "none";
-            }
-        } else {
-            /*for ( i = 0; i < Fx.length; i++ ) {
-                Fx[i].style.width = null;
-            }*/
-            document.getElementById('const').innerHTML = "<b>[Brief]</b>";
-            Vx = document.getElementsByName('longname');
-            for ( var x = 0; x < Vx.length; x++ ) {
-                Vx[x].style.display = "";
-            }
-        }
-    }
     function toggle_chxbox( Name ) {
         var Fx = document.getElementById( Name );
         if ( Fx ) {
