@@ -11,7 +11,8 @@
           single_message/0,
           init_database/0,
           rebuild_tables/0,
-          format_cookie/1
+          format_cookie/1,
+          hexdigest/1
          ] ).
 
 -include( "dorkinator.hrl" ).
@@ -33,6 +34,7 @@ start() ->
     crypto:start(),
     inets:start(),
     application:start( yaws ),
+    application:start( ecouch ),
     GC = yaws_config:make_default_gconf( false, "" ),
     SC = #sconf{ port = 3000,
                  servername = "localhost",
@@ -47,24 +49,8 @@ start() ->
     build_templates(),
     yaws_api:setconf( GC, [[ SC ]] ).
 
-
-%% s_init() ->
-%%     Px = ets:new( ipdsessions, [ set, public, named_table ] ),
-%%     ets:insert( Px, { "the_first_record", "must_be_inserted_for_some_reason" } ).
-
-%% s_store( Login, Auth ) ->
-%%     ets:insert( ipdsessions, { Login, Auth } ).
-
-%% s_find( Login ) ->
-%%     case ets:lookup( ipdsessions, Login ) of
-%%         [ { Login, Auth } ] ->
-%%             Auth;
-%%         _ ->
-%%             false
-%%     end.        
-
 build_templates() ->
-    TemplateList = [ "about", "login", "tweet", "header", "footer", "index", "catastrophic","setup", "qdirect", "viewer" ],
+    TemplateList = [ "register", "about", "login", "tweet", "header", "footer", "index", "catastrophic","setup", "qdirect", "viewer" ],
     [ erlydtl_compiler:compile( "./templates/" ++ X ++ ".html", X, [ { out_dir, "./ebin" } ] ) || X <- TemplateList ].
 
 single_message() ->
@@ -148,3 +134,9 @@ auth_info( Arg ) ->
                     false
             end
     end.
+
+hexdigest( Px ) ->
+    lists:flatten( lists:map( fun( V ) ->
+                                      httpd_util:integer_to_hexlist( V ) end,
+                              binary_to_list( erlang:md5( Px ) )
+                              ) ).

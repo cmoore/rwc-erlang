@@ -8,7 +8,10 @@
           delete_user/1,
           service_key/1,
           update_auth/2,
-          auth_confirm/1
+          auth_confirm/1,
+          enable_user/1,
+          disable_user/1,
+          write/1
          ] ).
 -include_lib( "stdlib/include/qlc.hrl" ).
 -include( "dorkinator.hrl" ).
@@ -32,7 +35,7 @@ find_user( Login, Password ) ->
               qlc:q(
                 [ X || X <- mnesia:table( users ),
                        X#users.login =:= Login,
-                       X#users.password =:= Password ]
+                       X#users.password =:= dorkinator:hexdigest( Password ) ]
                ) )
     end.
     
@@ -42,9 +45,10 @@ find_user( Login, Password ) ->
 add_user( Login, Password ) ->
     add_user( Login, Password, "" ).
 add_user( Login, Password, Auth ) ->
+    Px = dorkinator:hexdigest( Password ),
     User = #users{
       login = Login,
-      password = Password,
+      password = Px,
       service_key = dorkinator:gen_key(),
       auth = Auth
      },
@@ -83,3 +87,21 @@ update_auth( Login, Auth ) ->
                                         mnesia:write( Fv )
                                 end )
     end.
+
+enable_user( Login ) ->
+    [ Px | _ ] = users:find_user( Login ),
+    Rv = Px#users{ active = yes },
+    mnesia:transaction( fun() ->
+                                mnesia:write( Rv )
+                        end ).
+
+disable_user( Login ) ->
+    [ Px | _ ] = users:find_user( Login ),
+    Rv = Px#users{ active = no },
+    mnesia:transaction( fun() ->
+                                mnesia:write( Rv )
+                        end ).
+write( Px ) ->
+    mnesia:transaction( fun() ->
+                                mnesia:write( Px )
+                        end ).

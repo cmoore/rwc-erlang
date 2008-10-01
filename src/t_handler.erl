@@ -117,11 +117,16 @@ sym( Svc ) ->
 rfmt( [], _Type ) ->
     [];
 rfmt( [ Svc | Rst ], Type ) ->
-    lists:append( reformat_friends_data( pull_service_data(
-                                           Svc#services.username,
-                                           Svc#services.password,
-                                           sym(Svc#services.service),
-                                           Type ), sym( Svc#services.service ) ), rfmt( Rst, Type ) ).
+    case pull_service_data(
+           Svc#services.username,
+           Svc#services.password,
+           sym(Svc#services.service),
+           Type ) of
+        {error, lwtc_errored_out} ->
+            lists:append( reformat_friends_data( [], sym( Svc#services.service ) ), rfmt( Rst, Type ) );
+        Px ->
+            lists:append( reformat_friends_data( Px, sym( Svc#services.service ) ), rfmt( Rst, Type ) )
+    end.
 
 remove_non_twitter( [] ) ->
     [];
@@ -171,7 +176,7 @@ pull_service_data( Login, Password, Service, Request ) ->
             { error, lwtc_errored_out };
         { struct, Fv } ->
             case lists:keysearch( list_to_binary( "error" ), 1, Fv ) of
-                        { value, _ } ->
+                { value, _ } ->
                     { error, lwtc_errored_out };
                 _ ->
                     Px

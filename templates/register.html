@@ -1,0 +1,21 @@
+
+{% include "header.html" %}
+
+<form method="POST" action="/u/register">
+  <table>
+    <tr><td><b>Login</b></td><td><input type="text" name="user_login"></td></tr>
+    <tr><td><b>Password</b></td><td><input type="password" name="user_password"></td></tr>
+    <tr><td><b>Email Address</b></td><td><input type="text" name="user_email"></td></tr>
+    <tr><td colspan=2><input type=submit value="Sign Up!"></td></tr>
+  </table>
+</form>
+<div style="width:400px;">
+  By registering, you agree that you absolve the creator of this application from any responsibility for
+  what might happen to you as a result of using this service.  Like, say, if you 
+  challenge a gang of bikers to a drinking contest and die as a result of alcohol
+  poisoning or anything else that might lead to your untimely demise or dismemberment.<br/>
+  <br/>
+  <br/> 
+  No, we won't sell your email address to spammers.  We're far too lazy for all that.
+</div>
+{% include "footer.html" %}
