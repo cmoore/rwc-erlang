@@ -50,11 +50,11 @@ start() ->
     yaws_api:setconf( GC, [[ SC ]] ).
 
 build_templates() ->
-    TemplateList = [ "register", "about", "login", "tweet", "header", "footer", "index", "catastrophic","setup", "qdirect", "viewer" ],
+    TemplateList = [ "toolbar", "register", "about", "login", "tweet", "header", "footer", "index", "catastrophic","setup", "qdirect", "viewer" ],
     [ erlydtl_compiler:compile( "./templates/" ++ X ++ ".html", X, [ { out_dir, "./ebin" } ] ) || X <- TemplateList ].
 
 single_message() ->
-    case lwtc:setup( [ { login, "hydo" }, { password, "m1n3rv4" } ] ) of
+    case lwtc:setup( [ { login, "hydo" }, { password, "_______" } ] ) of
         { ok, Id } ->
             [ Px | _ ] = lwtc:request( Id, friends_timeline ),
             Px;

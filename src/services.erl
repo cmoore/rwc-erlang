@@ -38,7 +38,7 @@ by_user( Login ) ->
     e(
       qlc:q(
         [ X || X <- mnesia:table( services ),
-               X#services.service_key =:= users:service_key( Login ) ]
+               X#services.service_key =:= users:service_key( Login )]
         )).
 
 delete( Idx ) ->

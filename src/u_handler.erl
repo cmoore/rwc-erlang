@@ -10,12 +10,23 @@ out( Pf ) ->
     Args = Pf:server_args(),
     Path = Args#arg.appmoddata,
     case Path of
+        "u/logout" ->
+            logout_handler( Args, Pf );
         "u/register" ->
             register_handler( Args, Pf );
         "u/login" ->
             login_handler( Args, Pf );
         _ ->
             login_handler( Args, Pf )
+    end.
+
+logout_handler( A, _Pf ) ->
+    case dorkinator:auth_info( A ) of
+        false ->
+            { redirect, "/u/login" };
+        Vx ->
+            users:update_auth( Vx#users.login, "" ),
+            { redirect, "/u/login" }
     end.
 
 login_handler( A, Pf ) ->
@@ -33,7 +44,7 @@ login_handler( A, Pf ) ->
                             { html, Pf:page( "login", [ { error, "Bad login/password." } ] ) };
                         Vx ->
                             [ Px | _ ] = Vx,
-                            AuthKey = dorkinator:gen_key(),
+                            AuthKey = binary_to_list(dorkinator:gen_key()),
                             users:update_auth( Px#users.login, AuthKey ),
                             [ { html, Pf:page( "qdirect" ) }, dorkinator:format_cookie( #session{ key = AuthKey } ) ]
                     end;
@@ -75,7 +86,8 @@ register_handler( A, Pf ) ->
                                                     Px = #users{
                                                       login = Login,
                                                       password = dorkinator:hexdigest( Password ),
-                                                      email = Email
+                                                      email = Email,
+                                                      service_key = dorkinator:gen_key()
                                                      },
                                                     case users:write( Px ) of
                                                         { atomic, ok } ->
