@@ -80,3 +80,7 @@ input {
     font-size: 16px;
 }
 
+.about {
+    width: 350px;
+    background-color: #706d69;
+}
