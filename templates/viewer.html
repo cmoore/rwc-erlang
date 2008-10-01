@@ -29,22 +29,22 @@
   <table>
     <tr>
       <td>
-        <a href="/t/tweet?{{ e.id }}"><img border=0 src="{{ e.picture }}" style="width:40px;height:40px;"/></a>
+        <img border=0 src="{{ e.picture }}" style="width:45px;height:45px;"/>
       </td>
       <td>
         {% ifequal e.svc "twitter" %}
-        <a href="http://twitter.com/{{ e.screen_name }}">{{ e.name }}</a>
+        <a href="http://twitter.com/{{ e.screen_name }}">{{ e.name }}</a>({{ e.screen_name }})
         {% endifequal %}
         {% ifequal e.svc "identica" %}
-        <a href="http://identi.ca/{{ e.screen_name }}">{{ e.name }}</a>
+        <a href="http://identi.ca/{{ e.screen_name }}">{{ e.name }}</a>({{ e.screen_name }})
         {% endifequal %}
 
         {% ifequal e.svc "twitter" %}
-        from <a href="http://twitter.com/">twitter</a>
+        from <a href="http://twitter.com/">twitter</a>&nbsp;<span onclick="javascript:document.getElementById('texty').value='@{{ e.screen_name }} ';document.getElementById('texty').focus();document.getElementById('ichbx').checked=0;document.getElementById('tchbx').checked = true;">[ @ ]</span>
         {% endifequal %}
 
         {% ifequal e.svc "identica" %}
-        from <a href="http://identi.ca/">identi.ca</a>
+        from <a href="http://identi.ca/">identi.ca</a>&nbsp;<span onclick="javascript:document.getElementById('texty').value='@{{ e.screen_name }} ';document.getElementById('texty').focus();document.getElementById('tchbx').checked=0;document.getElementById('ichbx').checked = true;">[ @ ]</span>
         {% endifequal %}
         <br/>
         {{ e.text }}

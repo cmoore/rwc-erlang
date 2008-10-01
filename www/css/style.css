@@ -32,7 +32,7 @@ a:hover {
 .message {
 	background-color: #706d69;
 	margin-bottom:2px;
-	border:1px solid #F8FFFD;
+	border:1px solid darkgrey;
 	color: #FFCC00;
 	font-size:14px;
 }
