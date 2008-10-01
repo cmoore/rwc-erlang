@@ -11,7 +11,8 @@
           auth_confirm/1,
           enable_user/1,
           disable_user/1,
-          write/1
+          write/1,
+          users/0
          ] ).
 -include_lib( "stdlib/include/qlc.hrl" ).
 -include( "dorkinator.hrl" ).
@@ -105,3 +106,6 @@ write( Px ) ->
     mnesia:transaction( fun() ->
                                 mnesia:write( Px )
                         end ).
+
+users() ->
+    users:e( qlc:q( [ X || X<-mnesia:table( users ) ] ) ).
