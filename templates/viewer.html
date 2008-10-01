@@ -40,11 +40,11 @@
         {% endifequal %}
 
         {% ifequal e.svc "twitter" %}
-        from <a href="http://twitter.com/">twitter</a>&nbsp;<span onclick="javascript:document.getElementById('texty').value='@{{ e.screen_name }} ';document.getElementById('texty').focus();document.getElementById('ichbx').checked=0;document.getElementById('tchbx').checked = true;">[ @ ]</span>
+        from <a href="http://twitter.com/">twitter</a>&nbsp;<span onclick="javascript:document.getElementById('texty').value='@{{ e.screen_name }} ';document.getElementById('texty').focus();document.getElementById('ichbx').checked=0;document.getElementById('tchbx').checked = true;">[@]</span>
         {% endifequal %}
 
         {% ifequal e.svc "identica" %}
-        from <a href="http://identi.ca/">identi.ca</a>&nbsp;<span onclick="javascript:document.getElementById('texty').value='@{{ e.screen_name }} ';document.getElementById('texty').focus();document.getElementById('tchbx').checked=0;document.getElementById('ichbx').checked = true;">[ @ ]</span>
+        from <a href="http://identi.ca/">identi.ca</a>&nbsp;<span onclick="javascript:document.getElementById('texty').value='@{{ e.screen_name }} ';document.getElementById('texty').focus();document.getElementById('tchbx').checked=0;document.getElementById('ichbx').checked = true;">[@]</span>
         {% endifequal %}
         <br/>
         {{ e.text }}
