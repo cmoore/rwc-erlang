@@ -1,45 +1,62 @@
 
-This is/will be a twitter and identica aggregator that uses ping.fm to send
-updates geared toward the iphone but will work in any browser.  At the moment
-though it only partially works.  If you are the adventurous type you can ... 
+ROYALE WITH CHEESE
+
+This is/will be a twitter and identica client geared toward the iphone but 
+will work in any browser.
 
 GETTING IT RUNNING -
 
 You'll need:
-erlang
-yaws
+- erlang
+- yaws
 
 1 - Copy Emakefile.sample to Emakefile and change the paths for Yaws and xmerl
 2 - Copy start.sh.sample to start.sh and change YAWS_DIR and NAME if you like.
-3 - Run start.sh and see what happens.
+3 - Run start.sh and see what happens
+4 - Assuming it started up correctly and after a few seconds you get the yaws
+    message telling you it's running, run "dorkinator:init_database()".  This 
+    will set the mnesia tables up.
+5 - Now, do a "dorkinator:halt()." and start it back up again.
 
 Most of the stuff here is fairly self contained.  There are a few tunables in
-src/dorkinator.erl as well including the listening port.  Otherwise you should be
-able to just run ./start.sh and open a browser to localhost:3000.  Reports on the
+src/dorkinator.erl including the listening port.  Otherwise you should be able
+to just run ./start.sh and open a browser to localhost:3000.  Reports on the
 success or failure of this are definitely welcomed.
 
 Usage -
 
-Once it's built and running, go to localhost:3000/t/setup and enter in your twitter
-and identica info.  The page should refresh to /t/viewer and should list your tweets
-etc. from both services.  That's as much as is working at the moment.
-
-Contact moc.cam@odyh with patches, questions, suggestions, etc.  Seriously, I listen
-to suggestions.  Bring 'em on.
-
-I'm going to work on a quickie development overview for people who might want to 
-hack on this to get them going faster.  I also seem to uncover quite a lot of 
-cruft and stupid mistakes when I write docs for a my own projects so it's not 
-entirely a selfless act.
+Once it's built and running, go to localhost:3000 and register.  Then you can use
+the [Setup] toolbar option to add twitter and identi.ca accounts.  When you are
+done, go to the [Viewer] link and, well, you'll see.
 
 This code has been tested on
 - Mac OS X / Server 10.5 using the MacPorts build of Erlang and YAWS.
 - FreeBSD / using the ports version of Erlang and YAWS.
 
-Plans/Ideas/Etc.
+Interesting files:
 
-- Explore the possibility of doing a whole ui in dashcode.  There's several pretty 
-cool things that are Safari-specific that might be fun to mess with.  For instance
-the simple client-side database system would be a nice place to possibly store
-authentication info.  Or, maybe not.  With or without the safari-specific stuff
-a dashcode interface would be pretty slick.
+src/core_handler.erl - This directs requests to the different modules or serves
+    local files from www/
+src/dorkinator.erl - Management controls, statup, shutdown, database
+    initialization, etc.
+src/pfactory.erl - The page factory.  Handles template params, does a few sugary
+    things to make the templating easier.
+src/services.erl and src/users.erl - Shortcut functions for pulling data from
+    the users and services mnesia tables.
+src/u_handler.erl - User management.  Registration, passwords, etc.
+src/t_handler.erl - The bulk of the viewer code and presentation.
+src/lwtc.erl - My own little JSON twitter/identica client.  There are others
+    and better ones out there.  I wrote this because I am still learning 
+    Erlang.  It's the journey not the destination, yadda yadda.
+
+This code is done.
+
+     Ok, well, of course there are always improvements that can be made, 
+especially given my elementary level erlang experience.  I think though that all
+too often developers, myself included, impulsively pick at their code as opposed
+to trying new and more challenging projects.  In an effort to break that habit,
+I'm calling this project "done".  I wanted a twitter and identica client that 
+can post to either or both of the services and that aggregates the two services 
+into one timeline and I did it.  In six months from now I'll look back on this 
+code and cringe I'm sure, but it does work and it works rather well at least for
+my purposes.

@@ -42,7 +42,6 @@ start() ->
                  docroot = "www",
                  appmods = [ { "/", core_handler } ]
                 },
-    kvs:start(),
     mnesia:start(),
     % mnesia:wait_for_tables( [  services, users ], 2000 ),
     erlydtl:create_parser(),
