@@ -78,33 +78,11 @@ update( Info, Message ) ->
                     "application/x-www-form-urlencoded",
                     Stat }, [], [] ).
 
-%%     case auth_from_id( Identifier ) of
-%%         [ { login, Login }, { password, Password }, { service, Service } ] ->
-%%             json_request( post, Login, Password, url_for_action( Request, Service, Args ) );
-%%         % "Hot hand in a dice game, baby-girl.  Six-on
-%%         % straight talkin' 'bout klackity-klackity-klackity."
-%%         Tron ->            
-%%             false
-%%     end.
-
+nrequest( _Login, _Password, Service, Request ) when Service == "identica",
+                                                     Request == direct_messages ->
+    [];
 nrequest( Login, Password, Service, Request ) ->
-    NoGo = case Service of
-               "identica" ->
-                   case Request of
-                       direct_messages ->
-                           yes;
-                       _ ->
-                           no
-                   end;
-               _ ->
-                   no
-           end,
-    case NoGo of
-        yes ->
-            [];
-        _ ->
-            json_request( get, Login, Password, url_for_action( Request, Service ) )
-    end.
+    json_request( get, Login, Password, url_for_action( Request, Service ) ).
 
 request( Identifier, Request ) ->
     request( Identifier, Request, "" ).
@@ -169,15 +147,20 @@ url_for_action( Action, Service ) ->
            end,
     Head ++ Tail.
 
-head_for_service( Service ) ->
-    case list_to_atom(Service) of
-        twitter ->
-            "http://www.twitter.com/";
-        identica ->
-            "http://identi.ca/api/";
-        _ ->
-            { error, no_such_service }
-    end.
+head_for_service( Service ) when Service == "twitter" ->
+    "http://www.twitter.com/";
+head_for_service( Service ) when Service == "identica" ->
+    "http://identi.ca/api/".
+
+%head_for_service( Service ) ->
+%    case list_to_atom(Service) of
+%        twitter ->
+%            "http://www.twitter.com/";
+%        identica ->
+%            "http://identi.ca/api/";
+%        _ ->
+%            { error, no_such_service }
+%    end.
 
 %
 % Thank you, erlang-questions for your nifty post archives
