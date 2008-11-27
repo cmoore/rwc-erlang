@@ -78,8 +78,7 @@ update( Info, Message ) ->
                     "application/x-www-form-urlencoded",
                     Stat }, [], [] ).
 
-nrequest( _Login, _Password, Service, Request ) when Service == "identica",
-                                                     Request == direct_messages ->
+nrequest( _Login, _Password, Service, Request ) when Service == "identica", Request == direct_messages ->
     [];
 nrequest( Login, Password, Service, Request ) ->
     json_request( get, Login, Password, url_for_action( Request, Service ) ).
