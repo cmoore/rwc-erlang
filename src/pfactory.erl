@@ -1,6 +1,7 @@
 
 -module( pfactory, [ SArgs ] ).
 -export( [ page/1, page/2, static/1, server_args/0 ] ).
+-license( { mit_license, "http://www.linfo.org/mitlicense.html" } ).
 
 -include( "yaws_api.hrl" ).
 

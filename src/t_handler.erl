@@ -9,6 +9,7 @@
            sort_messages/1  ] ).
 -include( "yaws_api.hrl" ).
 -include( "dorkinator.hrl" ).
+-license( { mit_license, "http://www.linfo.org/mitlicense.html" } ).
 
 out( Pf ) ->
     A = Pf:server_args(),

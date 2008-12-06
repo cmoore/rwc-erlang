@@ -16,6 +16,7 @@
          ] ).
 -include_lib( "stdlib/include/qlc.hrl" ).
 -include( "dorkinator.hrl" ).
+-license( { mit_license, "http://www.linfo.org/mitlicense.html" } ).
 
 e( Query ) ->
     { atomic, Val } = mnesia:transaction( fun() ->

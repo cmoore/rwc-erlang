@@ -43,6 +43,7 @@
 -author( "Clint Moore <hydo@mac.com>" ).
 -version( "0.5" ).
 -include( "dorkinator.hrl" ).
+-license( { mit_license, "http://scutil.com/license.tmpl" } ).
 
 % @spec ( [ 
 %          { login, "login_name" },

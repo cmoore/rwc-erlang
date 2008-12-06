@@ -2,6 +2,7 @@
 -module( core_handler ).
 -export( [ out/1 ] ).
 -include( "yaws_api.hrl" ).
+-license( { mit_license, "http://www.linfo.org/mitlicense.html" } ).
 
 out( A ) ->
     Path = A#arg.appmoddata,

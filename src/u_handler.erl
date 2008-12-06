@@ -5,6 +5,7 @@
          ] ).
 -include( "yaws_api.hrl" ).
 -include( "dorkinator.hrl" ).
+-license( { mit_license, "http://www.linfo.org/mitlicense.html" } ).
 
 out( Pf ) ->
     Args = Pf:server_args(),

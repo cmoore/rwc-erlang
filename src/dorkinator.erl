@@ -20,6 +20,7 @@
 -include( "yaws.hrl" ).
 -include( "yaws_api.hrl" ).
 -include_lib( "stdlib/include/qlc.hrl" ).
+-license( { mit_license, "http://www.linfo.org/mitlicense.html" } ).
 
 stop() ->
     application:stop( yaws ),
