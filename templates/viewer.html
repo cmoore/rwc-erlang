@@ -28,6 +28,14 @@
 <div class="message">
   <table>
     <tr>
+
+      {% ifequal e.type "direct" %}
+      <td><img border=0 src="{{ e.picture }}" style="width:45px;height:45px;"/></td>
+      <td>
+        <span style="color:red;">Direct Message</span> from {{ e.name }} <span onclick="javascript:document.getElementById('texty').value='d {{ e.screen_name }} ';document.getElementById('texty').focus();document.getElementById('ichbx').checked=0;document.getElementById('tchbx').checked = true;">[->]</span><br>{{ e.text }} 
+      </td>
+      {% else %}
+
       <td>
         <img border=0 src="{{ e.picture }}" style="width:45px;height:45px;"/>
       </td>
@@ -49,6 +57,7 @@
         <br/>
         {{ e.text }}
       </td>
+      {% endifequal %}
     </tr>
   </table>
 </div>

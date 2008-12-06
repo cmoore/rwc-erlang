@@ -35,7 +35,7 @@ tweet_handler( A, _ ) ->
         false ->
             { redirect, "/u/login" };
         Px ->
-            case( A#arg.req)#http_request.method of
+            case( A#arg.req )#http_request.method of
                 'GET' ->
                     { redirect, "/t/viewer" };
                 'POST' ->
@@ -116,6 +116,14 @@ sym( Svc ) ->
 
 rfmt( [], _Type ) ->
     [];
+rfmt( [ Svc | Rst ], Type ) when Type == direct_messages ->
+    case lwtc:nrequest( Svc#services.username, Svc#services.password, sym( Svc#services.service ), Type ) of
+        { error, _ } ->
+            reformat_direct_messages( [], sym( Svc#services.service ) ) ++ rfmt( Rst, Type );
+        MList ->
+            reformat_direct_messages( MList, sym( Svc#services.service ) ) ++ rfmt( Rst, Type )
+    end;
+            
 rfmt( [ Svc | Rst ], Type ) ->
     case pull_service_data(
            Svc#services.username,
@@ -123,9 +131,9 @@ rfmt( [ Svc | Rst ], Type ) ->
            sym(Svc#services.service),
            Type ) of
         {error, lwtc_errored_out} ->
-            lists:append( reformat_friends_data( [], sym( Svc#services.service ) ), rfmt( Rst, Type ) );
+            reformat_friends_data( [], sym( Svc#services.service ) ) ++ rfmt( Rst, Type );
         Px ->
-            lists:append( reformat_friends_data( Px, sym( Svc#services.service ) ), rfmt( Rst, Type ) )
+            reformat_friends_data( Px, sym( Svc#services.service ) ) ++ rfmt( Rst, Type )
     end.
 
 remove_non_twitter( [] ) ->
@@ -163,9 +171,9 @@ viewer_handler( A, Px ) ->
         false ->
             { redirect, "/u/login" };
         Vx ->
-            All_Messages = lists:append(
-                             rfmt( services:by_user( Vx#users.login ), replies ),
-                             rfmt( services:by_user( Vx#users.login ), friends_timeline ) ),
+            All_Messages = rfmt( services:by_user( Vx#users.login ), replies ) ++
+                rfmt( services:by_user( Vx#users.login ), friends_timeline ) ++
+                rfmt( services:by_user( Vx#users.login ), direct_messages ),
             { html, Px:page( "viewer", [ { twittermessages, lists:reverse( sort_messages( All_Messages ) ) } ] ) }
     end.
 
@@ -213,6 +221,26 @@ reformat_friends_data( [ Element | Rest ], Service ) ->
                     end
             end
     end.
+
+reformat_direct_messages( [], _Service ) ->
+    [];
+reformat_direct_messages( [ Element_Raw | Rest ], Service ) ->
+    { struct, Element } = Element_Raw,
+    { value, { _, { struct, Sender } } } = lists:keysearch( <<"sender">>, 1, Element ),
+    { value, { _, BName } } = lists:keysearch( <<"name">>, 1, Sender ),
+    { value, { _, SName } } = lists:keysearch( <<"screen_name">>, 1, Sender ),
+    { value, { _, Message } } = lists:keysearch( <<"text">>, 1, Element ),
+    { value, { _, Date } } = lists:keysearch( <<"created_at">>, 1, Element ),
+    { value, { _, Picture } } = lists:keysearch( <<"profile_image_url">>, 1, Sender ),
+    [[
+      { svc, Service },
+      { name, binary_to_list( BName ) },
+      { text, binary_to_list( Message ) },
+      { created, binary_to_list( Date ) },
+      { picture, binary_to_list( Picture ) },
+      { screen_name, binary_to_list( SName ) },
+      { type, "direct" }
+     ]] ++ reformat_direct_messages( Rest, Service ).
 
 element_from_user( Message, Element ) ->
     case lists:keysearch( <<"user">>, 1, Message ) of
@@ -316,3 +344,4 @@ reformat_services( [ Px | Rst ] ) ->
         { services, Idx, Login, _, Service, _ } ->
             lists:append( [[ { idx, Idx }, { login, Login }, { service, Service } ]], reformat_services( Rst ) )
     end.
+
