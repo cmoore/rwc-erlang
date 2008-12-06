@@ -151,16 +151,6 @@ head_for_service( Service ) when Service == "twitter" ->
 head_for_service( Service ) when Service == "identica" ->
     "http://identi.ca/api/".
 
-%head_for_service( Service ) ->
-%    case list_to_atom(Service) of
-%        twitter ->
-%            "http://www.twitter.com/";
-%        identica ->
-%            "http://identi.ca/api/";
-%        _ ->
-%            { error, no_such_service }
-%    end.
-
 %
 % Thank you, erlang-questions for your nifty post archives
 %

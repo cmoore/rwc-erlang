@@ -12,7 +12,8 @@
           init_database/0,
           rebuild_tables/0,
           format_cookie/1,
-          hexdigest/1
+          hexdigest/1,
+          exp_string/0
          ] ).
 
 -include( "dorkinator.hrl" ).
@@ -106,7 +107,7 @@ validate(A, Fields, Fun) ->
 
 format_cookie( Px ) ->
     Cookie = yaws_api:new_cookie_session( Px ),
-    yaws_api:setcookie( "dorkinator", Cookie, "/", "'Wed 01-01-2020 00:00:00 GMT'" ).
+    yaws_api:setcookie( "dorkinator", Cookie, "/", exp_string() ).
 
 gen_key() ->
     Key = crypto:rand_bytes( 20 ),
@@ -139,3 +140,7 @@ hexdigest( Px ) ->
                                       httpd_util:integer_to_hexlist( V ) end,
                               binary_to_list( erlang:md5( Px ) )
                               ) ).
+
+exp_string() ->
+    { { _, Month, Day }, Time } = erlang:localtime(),
+    httpd_util:rfc1123_date( { { 2030, Month, Day }, Time } ).
