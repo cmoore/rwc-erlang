@@ -65,7 +65,7 @@ validate_field( "login", Login ) when length( Login ) > 1 ->
     ok;
 validate_field( "login", _ ) ->
     short_value();
-validate_field( "password", Password ) when length( Password ) > 4 ->
+validate_field( "password", Password ) when length( Password ) > 1 ->
     ok;
 validate_field( "password", _ ) ->
     short_value();
