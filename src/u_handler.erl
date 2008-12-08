@@ -62,18 +62,22 @@ login_handler( A, Pf ) ->
 short_value() ->
     { error, "Value is too short!" }.
 
-validate_field( "login", Login ) when length( Login ) > 1 ->
+validate_field( "user_login", Login ) when length( Login ) > 1 ->
     ok;
-validate_field( "login", _ ) ->
+validate_field( "user_login", _ ) ->
     short_value();
-validate_field( "password", Password ) when length( Password ) > 1 ->
+validate_field( "user_password", Password ) when length( Password ) > 1 ->
     ok;
-validate_field( "password", _ ) ->
+validate_field( "user_password", _ ) ->
     short_value();
 validate_field( "user_email", Email ) when length( Email ) > 4 ->
     ok;
 validate_field( "user_email", _ ) ->
-    short_value().
+    short_value();
+validate_field( "password", _ ) ->
+    ok;
+validate_field( "login", _ ) ->
+    ok.
 
 register_handler( A, Pf ) ->
     case (A#arg.req)#http_request.method of
