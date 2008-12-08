@@ -129,6 +129,8 @@ headers( User, Pass ) ->
     Basic = lists:flatten( io_lib:fwrite( "Basic ~s", [ UP ] ) ),
     [ { "User-Agent", "Dorkpatrol/0.1" }, { "Authorization", Basic } ].
 
+url_for_action( Action, _Service ) when Action == trends ->
+    "http://search.twitter.com/statuses/trends.json";
 url_for_action( Action, Service ) ->
     Head = head_for_service( Service ),
     Tail = case Action of

@@ -104,37 +104,42 @@ setup_handler( A, Pf ) ->
             end
     end.
 
-validate_field( _X, _Y ) ->
-    ok.
+validate_field( "account_type", _ ) ->
+    ok;
+validate_field( "acct_login", Login ) when length( Login ) > 1 ->
+    ok;
+validate_field( "acct_login", _ ) ->
+    { error, "Value is too short." };
 
-sym( Svc ) ->
-    case Svc of
-        "identi.ca" ->
-            "identica";
-        _ ->
-            Svc
-    end.
+validate_field( "acct_password", Pass ) when length( Pass ) > 2 ->
+    ok;
+validate_field( "acct_Password", _ ) ->
+    { error, "Value is too short." };
+
+validate_field( "svc", Line ) when length( Line ) > 1 ->
+    ok;
+validate_field( "svc", _ ) ->
+    { error, "Value is too short." }.
 
 rfmt( [], _Type ) ->
     [];
 rfmt( [ Svc | Rst ], Type ) when Type == direct_messages ->
-    case lwtc:nrequest( Svc#services.username, Svc#services.password, sym( Svc#services.service ), Type ) of
+    case lwtc:nrequest( Svc#services.username, Svc#services.password, Svc#services.service, Type ) of
         { error, _ } ->
-            reformat_direct_messages( [], sym( Svc#services.service ) ) ++ rfmt( Rst, Type );
+            reformat_direct_messages( [], Svc#services.service ) ++ rfmt( Rst, Type );
         MList ->
-            reformat_direct_messages( MList, sym( Svc#services.service ) ) ++ rfmt( Rst, Type )
-    end;
-            
+            reformat_direct_messages( MList, Svc#services.service ) ++ rfmt( Rst, Type )
+    end;            
 rfmt( [ Svc | Rst ], Type ) ->
     case pull_service_data(
            Svc#services.username,
            Svc#services.password,
-           sym(Svc#services.service),
+           Svc#services.service,
            Type ) of
         {error, lwtc_errored_out} ->
-            reformat_friends_data( [], sym( Svc#services.service ) ) ++ rfmt( Rst, Type );
+            reformat_friends_data( [], Svc#services.service ) ++ rfmt( Rst, Type );
         Px ->
-            reformat_friends_data( Px, sym( Svc#services.service ) ) ++ rfmt( Rst, Type )
+            reformat_friends_data( Px, Svc#services.service ) ++ rfmt( Rst, Type )
     end.
 
 remove_non_twitter( [] ) ->
@@ -203,25 +208,20 @@ reformat_friends_data( { error, pull_service_data_failed }, _ ) ->
 reformat_friends_data( [], _ ) ->
     [];
 reformat_friends_data( [ Element | Rest ], Service ) ->
-    case Element of
-        { struct, List } ->
-            case lists:keysearch( list_to_binary( "id" ), 1, List ) of
-                { value, { <<"id">>, Id } } ->
-                    case lists:keysearch( list_to_binary( "text" ), 1, List ) of
-                        { value, { <<"text">>, Text } } ->
-                            { value, { <<"created_at">>, Date } } = lists:keysearch( list_to_binary( "created_at" ), 1, List ),
-                            lists:append( [[
-                                            { svc, Service },
-                                            { id, Id },
-                                            { text, urlize(Text, Service) },
-                                            { picture, element_from_user( List, <<"profile_image_url">> ) },
-                                            { name, element_from_user( List, <<"name">> ) },
-                                            { screen_name, element_from_user( List, <<"screen_name">> ) },
-                                            { created, binary_to_list( Date ) }
-                                           ]], reformat_friends_data( Rest, Service ))
-                    end
-            end
-    end.
+    { struct, List } = Element,
+    { value, { <<"id">>, Id } } = lists:keysearch( <<"id">>, 1, List ),
+    { value, { <<"text">>, Text } } = lists:keysearch( <<"text">>, 1, List ),
+    { value, { <<"created_at">>, Date } } = lists:keysearch( <<"created_at">>, 1, List ),
+
+    [ [
+       { svc, Service },
+       { id, Id },
+       { text, urlize( Text, Service ) },
+       { picture, element_from_user( List, <<"profile_image_url">> ) },
+       { name, element_from_user( List, <<"name">> ) },
+       { screen_name, element_from_user( List, <<"screen_name">> ) },
+       { created, binary_to_list( Date ) }
+      ] ] ++ reformat_friends_data( Rest, Service ).
 
 reformat_direct_messages( [], _Service ) ->
     [];
@@ -233,6 +233,7 @@ reformat_direct_messages( [ Element_Raw | Rest ], Service ) ->
     { value, { _, Message } } = lists:keysearch( <<"text">>, 1, Element ),
     { value, { _, Date } } = lists:keysearch( <<"created_at">>, 1, Element ),
     { value, { _, Picture } } = lists:keysearch( <<"profile_image_url">>, 1, Sender ),
+
     [[
       { svc, Service },
       { name, binary_to_list( BName ) },
@@ -244,30 +245,18 @@ reformat_direct_messages( [ Element_Raw | Rest ], Service ) ->
      ]] ++ reformat_direct_messages( Rest, Service ).
 
 element_from_user( Message, Element ) ->
-    case lists:keysearch( <<"user">>, 1, Message ) of
-        { value, { <<"user">>, { struct, UserList } } } ->
-            case lists:keysearch( Element, 1, UserList ) of
-                { value, { Element, User } } ->
-                    binary_to_list( User )
-            end
-    end.
+    { value, { <<"user">>, { struct, UserList } } } = lists:keysearch( <<"user">>, 1, Message ),
+    { value, { Element, User } } = lists:keysearch( Element, 1, UserList ),
+    binary_to_list( User ).
 
 tfm( Message ) ->
-    case lists:keysearch( created, 1, Message ) of
-        { value, { created, Date } } ->
-            case string:tokens( Date, " " ) of
-                [ _, Month, Dom, Time, _, Year ] ->
-                    Ic = fun(X) ->
-                                 list_to_integer( X )
-                         end,
-                    [ H, M, S ] = string:tokens( Time, ":" ),
-                    calendar:datetime_to_gregorian_seconds( { { Ic(Year), m_t_n( Month ), Ic(Dom) }, { Ic(H), Ic(M), Ic(S) } } );
-                _ ->
-                    []
-            end;
-        _ ->
-            []
-    end.
+    { value, { created, Date } } = lists:keysearch( created, 1, Message ),
+    [ _, Month, Dom, Time, _, Year ] = string:tokens( Date, " " ),
+    Ic = fun( X ) ->
+                 list_to_integer( X )
+         end,
+    [ H, M, S ] = string:tokens( Time, ":" ),
+    calendar:datetime_to_gregorian_seconds( { { Ic(Year), m_t_n( Month ), Ic(Dom) }, { Ic(H), Ic(M), Ic(S) } } ).
 
 sort_messages( [] ) ->
     [];
@@ -293,7 +282,6 @@ m_t_n( Month ) ->
             ],
     { _, { _, Num } } = lists:keysearch( Month, 1, Table ),
     Num.
-
 
 urlize( Message, Service ) ->
     list_to_binary(
@@ -341,8 +329,6 @@ yoorl( X, Service ) ->
 reformat_services( [] ) ->
     [];
 reformat_services( [ Px | Rst ] ) ->
-    case Px of 
-        { services, Idx, Login, _, Service, _ } ->
-            lists:append( [[ { idx, Idx }, { login, Login }, { service, Service } ]], reformat_services( Rst ) )
-    end.
+    { services, Idx, Login, _, Service, _ } = Px,
+    [ [ { idx, Idx }, { login, Login }, { service, Service } ] ] ++ reformat_services( Rst ).
 
