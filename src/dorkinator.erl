@@ -107,7 +107,7 @@ validate(A, Fields, Fun) ->
       end, {[], []}, lists:reverse(Fields)).
 
 format_cookie( Px ) ->
-    Cookie = yaws_api:new_cookie_session( Px ),
+    Cookie = yaws_api:new_cookie_session( Px, 259200 ),
     yaws_api:setcookie( "dorkinator", Cookie, "/", exp_string() ).
 
 gen_key() ->
@@ -120,18 +120,21 @@ auth_info( Arg ) ->
     C = H#headers.cookie,
     case yaws_api:find_cookie_val( "dorkinator", C ) of
         [] ->
+            io:format( "find_cookie_val failed." ),
             false;
         Cookie ->
             case yaws_api:cookieval_to_opaque( Cookie ) of
                 { ok, { session, Val } } ->
                     case users:auth_confirm( Val ) of
                         false ->
+                            io:format( "auth_confirm failed." ),
                             false;
                         Px ->
                             [ Vt | _ ] = Px,
                             Vt
                     end;
                 { error, no_session } ->
+                    io:format( "cookieval_to_opaque failed." ),
                     false
             end
     end.
