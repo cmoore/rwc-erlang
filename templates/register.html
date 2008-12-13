@@ -3,9 +3,9 @@
 
 <form method="POST" action="/u/register">
   <table>
-    <tr><td><b>Login</b></td><td><input type="text" name="user_login"></td></tr>
-    <tr><td><b>Password</b></td><td><input type="password" name="user_password"></td></tr>
-    <tr><td><b>Email Address</b></td><td><input type="text" name="user_email"></td></tr>
+    <tr><td><b>Login</b></td><td><input type="text" name="user_login"> >1 char</td></tr>
+    <tr><td><b>Password</b></td><td><input type="password" name="user_password"> >1 char</td></tr>
+    <tr><td><b>Email Address</b></td><td><input type="text" name="user_email"> >4 chars</td></tr>
     <tr><td colspan=2><input type=submit value="Sign Up!"></td></tr>
   </table>
 </form>
@@ -14,6 +14,9 @@
   what might happen to you as a result of using this service.<br/>
   <br/>
   <br/>
-  No, we won't sell your email address to spammers.  We're far too lazy for all that.
+  No, we won't sell your email address to spammers.  We're far too lazy for all that.  In fact, it's only really here because I might get around to writing something so that you can recover your password at some point.
+  <br/>
+  <br/>
+  
 </div>
 {% include "footer.html" %}
