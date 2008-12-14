@@ -39,7 +39,7 @@
 %
 
 -module( lwtc ).
--export( [ setup/1, request/3, request/2, update/2, nrequest/4 ] ).
+-export( [ setup/1, request/3, request/2, update/2, update_location/2, nrequest/4, keyd_store/2, keyd_lookup/1 ] ).
 -author( "Clint Moore <hydo@mac.com>" ).
 -version( "0.5" ).
 -include( "dorkinator.hrl" ).
@@ -71,6 +71,14 @@ setup( AuthInfo ) ->
             false
     end.
 
+update_location( Info, Latlon ) ->
+    Location = "location=" ++ yaws_api:url_encode( Latlon ),
+    http:request( post,
+                  { url_for_action( update_location, Info#services.service ),
+                    headers( Info#services.username, Info#services.password ),
+                    "application/x-www-form-urlencoded",
+                    Location }, [], [] ).
+
 update( Info, Message ) ->
     Stat = "source=" ++ yaws_api:url_encode( "royalewithcheese" ) ++ "&status=" ++ yaws_api:url_encode( Message ),
     http:request( post,
@@ -78,6 +86,7 @@ update( Info, Message ) ->
                     headers( Info#services.username, Info#services.password ),
                     "application/x-www-form-urlencoded",
                     Stat }, [], [] ).
+
 
 nrequest( _Login, _Password, Service, Request ) when Service == "identica", Request == direct_messages ->
     [];
@@ -129,6 +138,8 @@ headers( User, Pass ) ->
     Basic = lists:flatten( io_lib:fwrite( "Basic ~s", [ UP ] ) ),
     [ { "User-Agent", "Dorkpatrol/0.1" }, { "Authorization", Basic } ].
 
+url_for_action( Action, _Service ) when Action == near_me ->
+    "http://search.twitter.com/search.json?geocode=";
 url_for_action( Action, _Service ) when Action == trends ->
     "http://search.twitter.com/statuses/trends.json";
 url_for_action( Action, Service ) ->
@@ -144,6 +155,8 @@ url_for_action( Action, Service ) ->
                    "statuses/user_timeline.json";
                public_timeline ->
                    "statuses/public_timeline.json";
+               update_location ->
+                   "account/update_profile.json";
                replies ->
                    "statuses/replies.json"
            end,
@@ -205,3 +218,4 @@ keyd_loop() ->
             From ! { keyd, get( Key ) },
             keyd_loop()
     end.
+

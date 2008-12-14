@@ -27,6 +27,12 @@ out( Pf ) ->
             viewer_handler( A, Pf );
         "t/post" ->
             tweet_handler( A, Pf );
+        "t/g/view" ->
+            near_me( A, Pf );
+        "t/g/enable_address" ->
+            set_location( A, Pf );
+        "t/g/setup" ->
+            geo_menu( A, Pf );
         _ ->
             { html, Pf:page( "index" ) }
     end.
@@ -116,6 +122,11 @@ validate_field( "acct_password", Pass ) when length( Pass ) > 2 ->
 validate_field( "acct_Password", _ ) ->
     { error, "Value is too short." };
 
+validate_field( "longitude", _ ) ->
+    ok;
+validate_field( "latitude", _ ) ->
+    ok;
+
 validate_field( "svc", Line ) when length( Line ) > 1 ->
     ok;
 validate_field( "svc", _ ) ->
@@ -123,6 +134,14 @@ validate_field( "svc", _ ) ->
 
 rfmt( [], _Type ) ->
     [];
+rfmt( [ Svc | _Rst ], Type ) when Type == near_me ->
+    case lwtc:request( Svc#services.username, Svc#services.password, Svc#services.service, Type ) of
+        { error, _ } ->
+            [];
+        MList ->
+            reformat_friends_data( MList, Svc#services.service )
+    end;
+
 rfmt( [ Svc | Rst ], Type ) when Type == direct_messages ->
     case lwtc:nrequest( Svc#services.username, Svc#services.password, Svc#services.service, Type ) of
         { error, _ } ->
@@ -170,6 +189,15 @@ direct_handler( A, Px ) ->
             Msg = [ lwtc:nrequest( X#services.username, X#services.password, X#services.service, direct_messages ) ||
                       X <- lists:flatten( remove_non_twitter( services:by_user( Vx#users.login ) ) ) ],
             { html, Px:page( "viewer", [ { twittermessages, lists:reverse( Msg ) } ] ) }
+    end.
+
+near_me( A, Px ) ->
+    case dorkinator:auth_info( A ) of
+        false ->
+            { redirect, "/u/login" };
+        Vx ->
+            Messages = rfmt( services:by_user( Vx#users.login ), near_me ),
+            { html, Px:page( "viewer", [ { twittermessages, lists:reverse( sort_messages( Messages ) ) } ] ) }
     end.
 
 viewer_handler( A, Px ) ->
@@ -332,3 +360,27 @@ reformat_services( [ Px | Rst ] ) ->
     { services, Idx, Login, _, Service, _ } = Px,
     [ [ { idx, Idx }, { login, Login }, { service, Service } ] ] ++ reformat_services( Rst ).
 
+
+
+%% Begin the geo stuff.
+
+geo_menu( Args, Page ) ->
+    case ( Args#arg.req )#http_request.method of
+        'GET' ->
+            { html, Page:page( "geo_setup" ) };
+        'POST' ->
+            { html, Page:page( "geo_setup", [ { error, "In post" } ] ) }
+    end.
+
+set_location( Args, Page ) ->
+    case dorkinator:validate( Args, [ "longitude", "latitude" ], fun validate_field/2 ) of
+        { [ Lon, Lat ], [] } ->
+            Au = dorkinator:auth_info( Args ),
+            ServiceAuth = services:cred_for_service( Au#users.login, "twitter" ),
+            Fx = lwtc:update_location( ServiceAuth, Lon ++ "," ++ Lat ),
+            io:format( "Location update: ~p~n", [ Fx ] ),
+            { redirect, "/t/viewer" };
+        Fx ->
+            io:format( "WTF: ~p", [ Fx ] ),
+            { html, Page:page( "geo_setup", [ { error, "Could not parse the input correctly." } ] ) }
+    end.

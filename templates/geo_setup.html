@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>Royale With Cheese</title>
+    <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+    <meta name="viewport" content="initial-scale=1.0; maximum-scale=1.0; user-scalable=0;" />
+    <link rel="stylesheet" href="/css/style.css" type="text/css">
+
+    <script type="text/javascript" src="http://maps.google.com/maps?file=api&amp;v=2.x&amp;key=ABQIAAAADstuVs16KMasANIAx99IuxT2yXp_ZAY8_ufC3CFXhHIE1NvwkxR0oG7drcH1ZBeenDb3xUKuU5TytQ"></script>
+    <!-- <script src="http://maps.google.com/maps?file=api&amp;v=2.x&amp;key=ABQIAAAADstuVs16KMasANIAx99IuxSy7yfY9QCNVsx1Ngo_i_zarCW4mRSRnipcoy1SsBbskI7EU9QH0Pyrlw"> -->
+
+    <script type="text/javascript">
+      var map;
+      var geocoder;
+
+      function get_code() {
+      geocoder.getLocations( document.getElementsByName('location')[0].value, address_callback );
+      }
+
+      function address_callback( response ) {
+      if ( !response || response.Status.code != 200 ) {
+      document.getElementById('info_box').innerHTML = "Google can't geocode that address.  Try again.";
+      } else {
+      document.getElementById('info_box').innerHTML = "[ If this looks right, click here to add this location ]";
+      place = response.Placemark[0];
+      point = new GLatLng(place.Point.coordinates[1], place.Point.coordinates[0]);
+      marker = new GMarker(point);
+      map.addOverlay(marker);
+      map.setCenter( point, 12 );
+      document.getElementById('latitude').value = place.Point.coordinates[1];
+      document.getElementById('longitude').value = place.Point.coordinates[0];
+      document.getElementById('map_canvas').style.display = 1;
+      }
+      }
+
+      function setup() {
+      map = new GMap2(document.getElementById("map_canvas"));
+      map.setCenter(new GLatLng(34, 0), 1);
+      geocoder = new GClientGeocoder();
+      } 
+    </script>
+  </head>
+  <body onload="setup();">
+      <table>
+        <tr><td align="center"><b>Location</b></td></tr>
+        <tr><td align="center"><input type="text" name="location"></td></tr>
+        <tr><td align="center"><span onclick="get_code();">[ Check ]</span></td></tr>
+        <tr><td align="center">Examples:<br>12th and Pine Portland, OR<br>12345 Somestreet Seattle, WA</td></tr>
+        <tr><td><div id="map_canvas" style="width: 500px; height: 300px;"></div></td></tr>
+        <tr><td align="center"><span onclick="document.getElementById('commit_coords').submit();" id="info_box"></span></td></tr>
+      </table>
+    </div>
+  </div>
+    <div style="display:none;">
+      <!-- Utility forms -->
+      <form id="commit_coords" method="POST" action="/t/g/enable_address">
+        <input type="text" id="longitude" name="latitude">
+        <input type="text" id="latitude" name="longitude">
+      </form>
+    </div>
+{% include "footer.html" %}
+

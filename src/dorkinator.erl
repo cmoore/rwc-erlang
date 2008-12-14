@@ -51,7 +51,7 @@ start() ->
     yaws_api:setconf( GC, [[ SC ]] ).
 
 build_templates() ->
-    TemplateList = [ "toolbar", "register", "about", "login", "tweet", "header", "footer", "index", "catastrophic","setup", "qdirect", "viewer" ],
+    TemplateList = [ "geo_setup", "toolbar", "register", "about", "login", "tweet", "header", "footer", "index", "catastrophic","setup", "qdirect", "viewer" ],
     [ erlydtl_compiler:compile( "./templates/" ++ X ++ ".html", X, [ { out_dir, "./ebin" } ] ) || X <- TemplateList ].
 
 single_message() ->
