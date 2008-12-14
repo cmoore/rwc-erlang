@@ -206,7 +206,7 @@ near_me( A, Px ) ->
                         Info ->
                             { struct, List } = lwtc:near_me( Info#services.username, Info#services.password, Geocode ),
                             { value, { <<"results">>, Messages } } = lists:keysearch( <<"results">>, 1, List ),
-                            { html, Px:page( "viewer", [ { twittermessages, lists:reverse( sort_geo_messages( Messages ) ) } ] ) }
+                            { html, Px:page( "viewer", [ { twittermessages, sort_geo_messages( Messages ) } ] ) }
                     end
             end
     end.
