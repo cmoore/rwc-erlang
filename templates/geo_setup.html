@@ -23,7 +23,7 @@
       if ( !response || response.Status.code != 200 ) {
       document.getElementById('info_box').innerHTML = "Google can't geocode that address.  Try again.";
       } else {
-      document.getElementById('info_box').innerHTML = "[ If this looks right click here to view tweets from this location ]";
+      document.getElementById('info_box').innerHTML = "[ View tweets from this location ]";
       place = response.Placemark[0];
       point = new GLatLng(place.Point.coordinates[1], place.Point.coordinates[0]);
       marker = new GMarker(point);
@@ -44,13 +44,11 @@
   </head>
   <body onload="setup();">
       <table style="width:501px;">
-        <tr><td align="center">View tweets within a 25km radius from any address.  This feature is admittedly very very rough.  I'll be smoothing the rough spots over the course of the weekend.  I went ahead and pushed this live though because it's quite a lot of fun.</td></tr>
-        <tr><td align="center"><hr></td></tr>
         <tr><td align="center"><b>Location</b></td></tr>
         <tr><td align="center"><input type="text" name="location"></td></tr>
         <tr><td align="center"><span onclick="get_code();"><b>[ Geocode Check ]</b></span></td></tr>
-        <tr><td align="center">Examples:<br>12th and Pine Portland, OR<br>12345 Somestreet Seattle, WA<br>Sao Palo, Brazil</td></tr>
-        <tr><td><div id="map_canvas" style="width: 500px; height: 300px;"></div></td></tr>
+        <tr><td align="center"><b>Examples:</b><br>12th and Pine Portland, OR <br> 12345 Somestreet Seattle, WA<br>Sao Palo, Brazil</td></tr>
+        <tr><td align="center"><div id="map_canvas" style="width: 320px; height: 240px;"></div></td></tr>
         <tr><td align="center"><span onclick="document.getElementById('commit_coords').submit();" id="info_box"></span></td></tr>
       </table>
     </div>

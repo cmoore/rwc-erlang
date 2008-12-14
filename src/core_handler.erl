@@ -25,6 +25,9 @@ out( A ) ->
 	    end;
 	nomatch ->
             case Path of
+                "hello" ->
+                    Px = pfactory:new( A ),
+                    { html, Px:page( "hello" ) };
                 "about" ->
                     Px = pfactory:new( A ),
                     { html, Px:page( "about" ) };
