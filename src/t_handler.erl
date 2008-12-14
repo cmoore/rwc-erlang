@@ -417,7 +417,7 @@ sort_geo_messages( [ Message | Rest ] ) ->
     [ [ 
         { id, Id },
         { svc, "twitter" },
-        { text, binary_to_list( Text ) },
+        { text, urlize( Text, "twitter" ) },
         { picture, binary_to_list( Picture ) },
         { created, binary_to_list( Created ) },
         { user_id, Userid },
