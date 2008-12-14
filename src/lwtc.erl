@@ -39,7 +39,7 @@
 %
 
 -module( lwtc ).
--export( [ setup/1, request/3, request/2, update/2, update_location/2, nrequest/4, keyd_store/2, keyd_lookup/1 ] ).
+-export( [ setup/1, request/3, request/2, update/2, update_location/2, near_me/3, nrequest/4, keyd_store/2, keyd_lookup/1 ] ).
 -author( "Clint Moore <hydo@mac.com>" ).
 -version( "0.5" ).
 -include( "dorkinator.hrl" ).
@@ -87,6 +87,10 @@ update( Info, Message ) ->
                     "application/x-www-form-urlencoded",
                     Stat }, [], [] ).
 
+near_me( Login, Password, Location ) ->
+    Message = Location ++ "," ++ "25km",
+    Yoorl = "http://search.twitter.com/search.json?geocode=" ++ yaws_api:url_encode( Message ),
+    json_request( get, Login, Password, Yoorl ).
 
 nrequest( _Login, _Password, Service, Request ) when Service == "identica", Request == direct_messages ->
     [];
@@ -138,8 +142,6 @@ headers( User, Pass ) ->
     Basic = lists:flatten( io_lib:fwrite( "Basic ~s", [ UP ] ) ),
     [ { "User-Agent", "Dorkpatrol/0.1" }, { "Authorization", Basic } ].
 
-url_for_action( Action, _Service ) when Action == near_me ->
-    "http://search.twitter.com/search.json?geocode=";
 url_for_action( Action, _Service ) when Action == trends ->
     "http://search.twitter.com/statuses/trends.json";
 url_for_action( Action, Service ) ->

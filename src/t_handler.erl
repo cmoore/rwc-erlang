@@ -6,6 +6,7 @@
            reformat_services/1,
            remove_non_twitter/1,
            urlize/2,
+           shift_to_twitter/1,
            sort_messages/1  ] ).
 -include( "yaws_api.hrl" ).
 -include( "dorkinator.hrl" ).
@@ -196,8 +197,18 @@ near_me( A, Px ) ->
         false ->
             { redirect, "/u/login" };
         Vx ->
-            Messages = rfmt( services:by_user( Vx#users.login ), near_me ),
-            { html, Px:page( "viewer", [ { twittermessages, lists:reverse( sort_messages( Messages ) ) } ] ) }
+            Key = Vx#users.login ++ "-loc",
+            case lwtc:keyd_lookup( Key ) of
+                { ok, Geocode } ->
+                    case shift_to_twitter( services:by_user( Vx#users.login ) ) of
+                        [] ->
+                            { redirect, "/t/g/setup" };
+                        Info ->
+                            { struct, List } = lwtc:near_me( Info#services.username, Info#services.password, Geocode ),
+                            { value, { <<"results">>, Messages } } = lists:keysearch( <<"results">>, 1, List ),
+                            { html, Px:page( "viewer", [ { twittermessages, lists:reverse( sort_geo_messages( Messages ) ) } ] ) }
+                    end
+            end
     end.
 
 viewer_handler( A, Px ) ->
@@ -360,8 +371,6 @@ reformat_services( [ Px | Rst ] ) ->
     { services, Idx, Login, _, Service, _ } = Px,
     [ [ { idx, Idx }, { login, Login }, { service, Service } ] ] ++ reformat_services( Rst ).
 
-
-
 %% Begin the geo stuff.
 
 geo_menu( Args, Page ) ->
@@ -372,15 +381,47 @@ geo_menu( Args, Page ) ->
             { html, Page:page( "geo_setup", [ { error, "In post" } ] ) }
     end.
 
-set_location( Args, Page ) ->
+set_location( Args, _Page ) ->
     case dorkinator:validate( Args, [ "longitude", "latitude" ], fun validate_field/2 ) of
         { [ Lon, Lat ], [] } ->
-            Au = dorkinator:auth_info( Args ),
-            ServiceAuth = services:cred_for_service( Au#users.login, "twitter" ),
-            Fx = lwtc:update_location( ServiceAuth, Lon ++ "," ++ Lat ),
-            io:format( "Location update: ~p~n", [ Fx ] ),
-            { redirect, "/t/viewer" };
-        Fx ->
-            io:format( "WTF: ~p", [ Fx ] ),
-            { html, Page:page( "geo_setup", [ { error, "Could not parse the input correctly." } ] ) }
+            Ts = Lon ++ "," ++ Lat,
+            Fx = dorkinator:auth_info( Args ),
+            Dx = Fx#users.login ++ "-loc",
+            lwtc:keyd_store( Dx, Ts ),
+            { redirect, "/t/g/view" };
+        _ ->
+            { redirect, "/t/g/setup" }
     end.
+
+shift_to_twitter( [] ) ->
+    [];
+shift_to_twitter( [ Px | Rest ] ) ->
+    case Px#services.service of
+        "twitter" ->
+            Px;
+        _ ->
+            shift_to_twitter( Rest )
+    end.
+
+
+sort_geo_messages( [] ) ->
+    [];
+sort_geo_messages( [ Message | Rest ] ) ->
+    { struct, List } = Message,
+    { value, { <<"text">>, Text } } = lists:keysearch( <<"text">>, 1, List ),
+    { value, { <<"from_user_id">>, Userid }} = lists:keysearch( <<"from_user_id">>, 1, List ),
+    { value, { <<"from_user">>, Fromuser }} = lists:keysearch( <<"from_user">>, 1, List ),
+    { value, { <<"profile_image_url">>, Picture }} = lists:keysearch( <<"profile_image_url">>, 1, List ),
+    { value, { <<"created_at">>, Created }} = lists:keysearch( <<"created_at">>, 1, List ),
+    { value, { <<"id">>, Id }} = lists:keysearch( <<"id">>, 1, List ),
+    [ [ 
+        { id, Id },
+        { svc, "twitter" },
+        { text, binary_to_list( Text ) },
+        { picture, binary_to_list( Picture ) },
+        { created, binary_to_list( Created ) },
+        { user_id, Userid },
+        { screen_name, binary_to_list( Fromuser ) },
+        { name, binary_to_list( Fromuser ) },
+        { type, "geo" }
+        ] ] ++ sort_geo_messages( Rest ).
