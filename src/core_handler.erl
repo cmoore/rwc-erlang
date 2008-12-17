@@ -8,7 +8,7 @@ out( A ) ->
     Path = A#arg.appmoddata,
     case regexp:first_match( (A#arg.headers)#headers.host, "p.hellyeah.org" ) of
         { match, _, _ } ->
-            { redirect, "rwc.hellyeah.org" };
+            { redirect, "http://rwc.hellyeah.org/" };
         _ ->
             case regexp:first_match( Path, ".avi$|.html$|.css$|.js$|.gif$|.jpg$" ) of
                 { match, X, Y } ->
