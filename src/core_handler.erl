@@ -6,7 +6,7 @@
 
 out( A ) ->
     Path = A#arg.appmoddata,
-    case regexp:first_match( Path, ".html$|.css$|.js$|.gif$|.jpg$" ) of
+    case regexp:first_match( Path, ".avi$|.html$|.css$|.js$|.gif$|.jpg$" ) of
 	{ match, X, Y } ->
 	    Px = pfactory:new( A ),
 	    % I know there's a better way to do this but I couldn't get
