@@ -1,0 +1,8 @@
+/.searchpath.default.map
+/auth.log
+/erl_crash.dump
+/localhost.access
+/report.log
+/src/erlydtl/erlydtl_parser.erl
+*.beam
+db/*
