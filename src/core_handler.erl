@@ -12,6 +12,8 @@ out( A ) ->
 	    % I know there's a better way to do this but I couldn't get
 	    % vdirs working in the yaws config.
 	    case string:substr( Path, X, Y ) of
+                ".avi" ->
+                    { content, "x-msvideo", Px:static( Path ) };
 		".css" ->
 		    { content, "text/css", Px:static( Path ) };
 		".js" ->
