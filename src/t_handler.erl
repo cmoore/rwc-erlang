@@ -359,9 +359,14 @@ yoorl( X, Service ) ->
     case regexp:match( Urlized, "^#" ) of
         { match, _, _ } ->
             case Service of
+                "twitter" ->
+                    "<a href=\"http://search.twitter.com/search?q=" ++ yaws_api:url_encode(Urlized) ++ "\">" ++ Urlized ++ "</a>";
                 "identica" ->
-                    { ok, Fx, _ } = regexp:sub( Urlized, "^#", "" ),
-                    "<a href=\"http://identi.ca/tag/" ++ Fx ++ "\">" ++ Urlized ++ "</a>";
+                    
+                    { ok, NoUnderscore, _ } = regexp:sub( Urlized, "_", "" ),
+                    { ok, Fx, _ } = regexp:sub( NoUnderscore, "^#", "" ),
+                    { ok, Px, _ } = regexp:sub( Fx, "\\.$", "" ),
+                    "<a href=\"http://identi.ca/tag/" ++ string:to_lower(Px) ++ "\">" ++ Urlized ++ "</a>";
                 _ ->
                     Urlized
             end;
@@ -429,3 +434,4 @@ sort_geo_messages( [ Message | Rest ] ) ->
         { name, binary_to_list( Fromuser ) },
         { type, "geo" }
         ] ] ++ sort_geo_messages( Rest ).
+
