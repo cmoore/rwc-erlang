@@ -15,6 +15,7 @@
 out( Pf ) ->
     A = Pf:server_args(),
     Path = A#arg.appmoddata,
+    logger:log( "Request for: " ++ Path ),
     case Path of
         "t/public" ->
             public_handler( A, Pf );
@@ -43,6 +44,7 @@ tweet_handler( A, _ ) ->
         false ->
             { redirect, "/u/login" };
         Px ->
+            logger:log( Px#users.login ++ " sent a tweet." ),
             case( A#arg.req )#http_request.method of
                 'GET' ->
                     { redirect, "/t/viewer" };
@@ -198,6 +200,7 @@ near_me( A, Px ) ->
             { redirect, "/u/login" };
         Vx ->
             Key = Vx#users.login ++ "-loc",
+            logger:log( Vx#users.login ++ " is using the geo feature." ),
             case lwtc:keyd_lookup( Key ) of
                 { ok, Geocode } ->
                     case shift_to_twitter( services:by_user( Vx#users.login ) ) of
@@ -216,6 +219,7 @@ viewer_handler( A, Px ) ->
         false ->
             { redirect, "/u/login" };
         Vx ->
+            logger:log( Vx#users.login ++ " is viewing tweets." ),
             All_Messages = rfmt( services:by_user( Vx#users.login ), replies ) ++
                 rfmt( services:by_user( Vx#users.login ), friends_timeline ) ++
                 rfmt( services:by_user( Vx#users.login ), direct_messages ),
