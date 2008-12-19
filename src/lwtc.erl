@@ -89,7 +89,7 @@ update( Info, Message ) ->
 
 near_me( Login, Password, Location ) ->
     Message = Location ++ "," ++ "25km",
-    Yoorl = "http://search.twitter.com/search.json?geocode=" ++ yaws_api:url_encode( Message ),
+    Yoorl = "http://search.twitter.com/search.json?rpp=100&geocode=" ++ yaws_api:url_encode( Message ),
     json_request( get, Login, Password, Yoorl ).
 
 nrequest( _Login, _Password, Service, Request ) when Service == "identica", Request == direct_messages ->
