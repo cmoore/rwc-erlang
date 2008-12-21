@@ -152,7 +152,7 @@ url_for_action( Action, Service ) ->
                update ->
                    "statuses/update.json";
                friends_timeline ->
-                   "statuses/friends_timeline.json";
+                   "statuses/friends_timeline.json?count=100&";
                user_timeline ->
                    "statuses/user_timeline.json";
                public_timeline ->

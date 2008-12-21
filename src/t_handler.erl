@@ -7,37 +7,39 @@
            remove_non_twitter/1,
            urlize/2,
            shift_to_twitter/1,
+           un_punctuate/1, un_punc/2,
            sort_messages/1  ] ).
 -include( "yaws_api.hrl" ).
 -include( "dorkinator.hrl" ).
 -license( { mit_license, "http://www.linfo.org/mitlicense.html" } ).
 
+
 out( Pf ) ->
     A = Pf:server_args(),
     Path = A#arg.appmoddata,
     logger:log( "Request for: " ++ Path ),
-    case Path of
-        "t/public" ->
-            public_handler( A, Pf );
-        "t/direct" ->
-            direct_handler( A, Pf );
-        "t/delete_service" ->
-            delete_service( A, Pf );
-        "t/setup" ->
-            setup_handler( A, Pf );
-        "t/viewer" ->
-            viewer_handler( A, Pf );
-        "t/post" ->
-            tweet_handler( A, Pf );
-        "t/g/view" ->
-            near_me( A, Pf );
-        "t/g/enable_address" ->
-            set_location( A, Pf );
-        "t/g/setup" ->
-            geo_menu( A, Pf );
-        _ ->
-            { html, Pf:page( "index" ) }
-    end.
+    out_handler( Path, A, Pf ).
+
+out_handler( Path, Args, Pf ) when Path == "t/public" ->
+    public_handler( Args, Pf );
+out_handler( Path, Args, Pf ) when Path == "t/direct" ->
+    direct_handler( Args, Pf );
+out_handler( Path, Args, Pf ) when Path == "t/delete_service" ->
+    delete_service( Args, Pf );
+out_handler( Path, Args, Pf ) when Path == "t/setup" ->
+    setup_handler( Args, Pf );
+out_handler( Path, Args, Pf ) when Path == "t/viewer" ->
+    viewer_handler( Args, Pf );
+out_handler( Path, Args, Pf ) when Path == "t/post" ->
+    tweet_handler( Args, Pf );
+out_handler( Path, Args, Pf ) when Path == "t/g/view" ->
+    near_me( Args, Pf );
+out_handler( Path, Args, Pf ) when Path == "t/g/enable_address" ->
+    set_location( Args, Pf );
+out_handler( Path, Args, Pf ) when Path == "t/g/setup" ->
+    geo_menu( Args, Pf ).
+
+
 
 tweet_handler( A, _ ) ->
     case dorkinator:auth_info( A ) of
@@ -328,7 +330,7 @@ m_t_n( Month ) ->
 
 urlize( Message, Service ) ->
     list_to_binary(
-      string:join( [ yoorl( X, Service ) || X <- string:tokens( binary_to_list(Message), " " ) ], " " )
+      string:join( [ un_punctuate( yoorl( X, Service ) ) || X <- string:tokens( binary_to_list(Message), " " ) ], " " )
      ).
 
 yoorl( X, Service ) ->
@@ -350,7 +352,7 @@ yoorl( X, Service ) ->
              _ ->
                  X
          end,
-    Urlized = case regexp:match( Vx, "^http://" ) of
+    Urlized = case regexp:match( Vx, "^http:" ) of
                    { match, _, _ } ->
                        "<a href=\"" ++ Vx ++ "\">" ++ Vx ++ "</a>";
                    _ ->
@@ -373,6 +375,17 @@ yoorl( X, Service ) ->
         _ ->
             Urlized
     end.
+
+un_punctuate( Word ) ->
+    un_punc(
+      un_punc(
+        un_punc( Word, "!" ),
+        "," ),
+      "\n" ).
+
+un_punc( Word, Fpat ) ->
+    { ok, Retv, _ } = regexp:gsub( Word, Fpat, "" ), 
+    Retv.
 
 reformat_services( [] ) ->
     [];
@@ -434,4 +447,5 @@ sort_geo_messages( [ Message | Rest ] ) ->
         { name, binary_to_list( Fromuser ) },
         { type, "geo" }
         ] ] ++ sort_geo_messages( Rest ).
+
 
