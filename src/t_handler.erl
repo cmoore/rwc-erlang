@@ -7,7 +7,7 @@
            remove_non_twitter/1,
            urlize/2,
            shift_to_twitter/1,
-           un_punctuate/1, un_punc/2,
+           un_punctuate/1,
            sort_messages/1  ] ).
 -include( "yaws_api.hrl" ).
 -include( "dorkinator.hrl" ).
@@ -17,7 +17,6 @@
 out( Pf ) ->
     A = Pf:server_args(),
     Path = A#arg.appmoddata,
-    logger:log( "Request for: " ++ Path ),
     out_handler( Path, A, Pf ).
 
 out_handler( Path, Args, Pf ) when Path == "t/public" ->
@@ -40,18 +39,20 @@ out_handler( Path, Args, Pf ) when Path == "t/g/setup" ->
     geo_menu( Args, Pf ).
 
 
-
+%
+% I need to figure out something nice and elegant to get rid of these case nests.
+% It's really unsightly.
+%
 tweet_handler( A, _ ) ->
     case dorkinator:auth_info( A ) of
         false ->
             { redirect, "/u/login" };
         Px ->
-            logger:log( Px#users.login ++ " sent a tweet." ),
             case( A#arg.req )#http_request.method of
                 'GET' ->
                     { redirect, "/t/viewer" };
                 'POST' ->
-                    Args = [ { list_to_atom( X ),Y } || {X,Y}<- yaws_api:parse_post( A ) ],
+                    Args = [ { list_to_atom( X ), Y } || { X , Y } <- yaws_api:parse_post( A ) ],
                     case lists:keysearch( message, 1, Args ) of
                         { value, { message, Message } } ->
                             case lists:keysearch( post_identica, 1, Args ) of
@@ -137,6 +138,9 @@ validate_field( "svc", Line ) when length( Line ) > 1 ->
 validate_field( "svc", _ ) ->
     { error, "Value is too short." }.
 
+
+
+
 rfmt( [], _Type ) ->
     [];
 rfmt( [ Svc | _Rst ], Type ) when Type == near_me ->
@@ -166,6 +170,8 @@ rfmt( [ Svc | Rst ], Type ) ->
             reformat_friends_data( Px, Svc#services.service ) ++ rfmt( Rst, Type )
     end.
 
+
+
 remove_non_twitter( [] ) ->
     [];
 remove_non_twitter( [ Sv | Rst ] ) ->
@@ -175,6 +181,8 @@ remove_non_twitter( [ Sv | Rst ] ) ->
         _ ->
             lists:append( [ [ ] ], remove_non_twitter( Rst ) )
     end.
+
+
 
 public_handler( A, Px ) ->
     case dorkinator:auth_info( A ) of
@@ -202,7 +210,6 @@ near_me( A, Px ) ->
             { redirect, "/u/login" };
         Vx ->
             Key = Vx#users.login ++ "-loc",
-            logger:log( Vx#users.login ++ " is using the geo feature." ),
             case lwtc:keyd_lookup( Key ) of
                 { ok, Geocode } ->
                     case shift_to_twitter( services:by_user( Vx#users.login ) ) of
@@ -221,7 +228,6 @@ viewer_handler( A, Px ) ->
         false ->
             { redirect, "/u/login" };
         Vx ->
-            logger:log( Vx#users.login ++ " is viewing tweets." ),
             All_Messages = rfmt( services:by_user( Vx#users.login ), replies ) ++
                 rfmt( services:by_user( Vx#users.login ), friends_timeline ) ++
                 rfmt( services:by_user( Vx#users.login ), direct_messages ),
@@ -294,6 +300,8 @@ element_from_user( Message, Element ) ->
     { value, { Element, User } } = lists:keysearch( Element, 1, UserList ),
     binary_to_list( User ).
 
+% Convert the time to something that a little easier to read.
+% I was probably thinking "time format" when I made this.
 tfm( Message ) ->
     { value, { created, Date } } = lists:keysearch( created, 1, Message ),
     [ _, Month, Dom, Time, _, Year ] = string:tokens( Date, " " ),
@@ -303,6 +311,9 @@ tfm( Message ) ->
     [ H, M, S ] = string:tokens( Time, ":" ),
     calendar:datetime_to_gregorian_seconds( { { Ic(Year), m_t_n( Month ), Ic(Dom) }, { Ic(H), Ic(M), Ic(S) } } ).
 
+
+% Sorts the messages by time as returned by tfm()
+%
 sort_messages( [] ) ->
     [];
 sort_messages( [ H | T ] ) ->
@@ -328,6 +339,15 @@ m_t_n( Month ) ->
     { _, { _, Num } } = lists:keysearch( Month, 1, Table ),
     Num.
 
+%
+% The text portion of the tweet can come with all sorts of funky stuff in it.
+% Well, at least it seems funky when you are dealing with regexes in a new language.
+% eg.
+% @user omg hai!
+% @user, lookie here: http://x.com/!
+%     ^comma                       ^ exclamation mark
+% All of these play hell with my hastily implemented reformatting.
+%
 urlize( Message, Service ) ->
     list_to_binary(
       string:join( [ un_punctuate( yoorl( X, Service ) ) || X <- string:tokens( binary_to_list(Message), " " ) ], " " )
@@ -376,16 +396,12 @@ yoorl( X, Service ) ->
             Urlized
     end.
 
+% Ah, much better than what was here before.
 un_punctuate( Word ) ->
-    un_punc(
-      un_punc(
-        un_punc( Word, "!" ),
-        "," ),
-      "\n" ).
-
-un_punc( Word, Fpat ) ->
-    { ok, Retv, _ } = regexp:gsub( Word, Fpat, "" ), 
-    Retv.
+    lists:foldl( fun( X, Elem ) ->
+                         { ok, Rv, _ } = regexp:gsub( Elem, X, "" ),
+                         Rv
+                 end, Word, [ "!", "," ] ).
 
 reformat_services( [] ) ->
     [];
