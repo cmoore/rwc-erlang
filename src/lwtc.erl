@@ -39,7 +39,11 @@
 %
 
 -module( lwtc ).
--export( [ setup/1, request/3, request/2, update/2, update_location/2, near_me/3, nrequest/4, keyd_store/2, keyd_lookup/1 ] ).
+-export( [
+          setup/1, request/3, request/2,
+          update/2, update_location/2,
+          near_me/3, near_me/4, nrequest/4
+         ] ).
 -author( "Clint Moore <hydo@mac.com>" ).
 -version( "0.5" ).
 -include( "dorkinator.hrl" ).
@@ -52,24 +56,15 @@
 %         ] ) -> true | false
 % @doc sets up the authentication information for future requests.
 % @end
-setup( AuthInfo ) ->
-    is_running(),
-    case AuthInfo of
-        [ { login, Login }, { password, Password }, { mode, twitter } ] ->
-            Id = Login ++ "-twitter",
-            keyd_store( Id, [ { login, Login }, { password, Password }, { service, twitter } ] ),
-            { ok, Id };
-        [ { login, Login }, { password, Password }, { mode, identica } ] ->
-            Id = Login ++ "-identica",
-            keyd_store( Id, [ { login, Login }, { password, Password }, { service, identica } ] ),
-            { ok, Id };
-        [ { login, Login }, { password, Password } ] -> % default to twitter.
-            Id = Login ++ "-twitter",
-            keyd_store( Id, [ { login, Login }, { password, Password }, { service, twitter } ] ),
-            { ok, Id };
-        _ ->
-            false
-    end.
+
+setup( [ { login, Login }, { password, Password }, { service, identica } ] ) ->
+    f_setup( Login, Password, (Login ++ "-identica") );
+setup( [ { login, Login }, { password, Password }, _ ] ) ->
+    f_setup( Login, Password, (Login ++ "-twitter" ) ).
+f_setup( Lg, Pw, Sv ) ->
+    keyd_store( Sv, [ { login, Lg }, { password, Pw } ] ),
+    { ok, Sv }.
+
 
 update_location( Info, Latlon ) ->
     Location = "location=" ++ yaws_api:url_encode( Latlon ),
@@ -80,22 +75,40 @@ update_location( Info, Latlon ) ->
                     Location }, [], [] ).
 
 update( Info, Message ) ->
-    Stat = "source=" ++ yaws_api:url_encode( "royalewithcheese" ) ++ "&status=" ++ yaws_api:url_encode( Message ),
-    http:request( post,
-                  { url_for_action( update, Info#services.service ),
+    http:request( post, {
+                    url_for_action( update, Info#services.service ),
                     headers( Info#services.username, Info#services.password ),
                     "application/x-www-form-urlencoded",
-                    Stat }, [], [] ).
+                    ( "source=" ++ yaws_api:url_encode( "royalewithcheese" ) ++ "&status=" ++ yaws_api:url_encode( Message ) )
+                   }, [], [] ).
+
+%g_update( Info, Message ) ->
+%    Stat = "source="
+%        ++ yaws_api:url_encode( "royalewithcheese" )
+%        ++ "&status=" ++ yaws_api:url_encode( Message ),
+%    http:request( post,
+%                  { url_for_action( update, Info#services.service ),
+%                    headers( Info#services.username, Info#services.password ),
+%                    "application/x-www-form-urlencoded",
+%                    Stat }, [], [] ).
+
 
 near_me( Login, Password, Location ) ->
-    Message = Location ++ "," ++ "25km",
-    Yoorl = "http://search.twitter.com/search.json?rpp=100&geocode=" ++ yaws_api:url_encode( Message ),
+    near_me( Login, Password, Location, 50 ).
+
+near_me( Login, Password, Location, Length ) ->
+    Message = Location ++ "," ++ Length ++ "km",
+    Yoorl = "http://search.twitter.com/search.json?rpp=100&geocode="
+        ++ yaws_api:url_encode( Message ),
     json_request( get, Login, Password, Yoorl ).
 
-nrequest( _Login, _Password, Service, Request ) when Service == "identica", Request == direct_messages ->
+
+nrequest( _Login, _Password, Service, Request ) when Service == "identica",
+                                                     Request == direct_messages ->
     [];
 nrequest( Login, Password, Service, Request ) ->
     json_request( get, Login, Password, url_for_action( Request, Service ) ).
+
 
 request( Identifier, Request ) ->
     request( Identifier, Request, "" ).
@@ -107,9 +120,6 @@ request( Identifier, Request, _Args ) ->
             false
     end.
 
-%
-% End of user-serviceable parts.
-%
 
 auth_from_id( Id ) ->
     case keyd_lookup( Id ) of
@@ -119,10 +129,12 @@ auth_from_id( Id ) ->
             false
     end.
 
+
 json_request( post, Login, Password, Url ) ->
     jsf( http:request( post, { Url, headers( Login, Password ) }, [], [] ) );
 json_request( get, Login, Password, Url ) ->
     jsf( http:request( get, { Url, headers( Login, Password ) }, [], [] ) ).
+
 
 jsf( Result ) ->
     case Result of
@@ -137,10 +149,12 @@ jsf( Result ) ->
             { error, Reason }
     end.
 
+
 headers( User, Pass ) ->
     UP = base64:encode( User ++ ":" ++ Pass ),
     Basic = lists:flatten( io_lib:fwrite( "Basic ~s", [ UP ] ) ),
     [ { "User-Agent", "Dorkpatrol/0.1" }, { "Authorization", Basic } ].
+
 
 url_for_action( Action, _Service ) when Action == trends ->
     "http://search.twitter.com/statuses/trends.json";
@@ -163,6 +177,7 @@ url_for_action( Action, Service ) ->
                    "statuses/replies.json"
            end,
     Head ++ Tail.
+
 
 head_for_service( Service ) when Service == "twitter" ->
     "http://www.twitter.com/";
