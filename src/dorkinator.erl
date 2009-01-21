@@ -13,7 +13,8 @@
           rebuild_tables/0,
           format_cookie/1,
           hexdigest/1,
-          exp_string/0
+          exp_string/0,
+          pmap/2
          ] ).
 
 -include( "dorkinator.hrl" ).
@@ -148,3 +149,28 @@ hexdigest( Px ) ->
 exp_string() ->
     { { _, Month, Day }, Time } = erlang:localtime(),
     httpd_util:rfc1123_date( { { 2030, Month, Day }, Time } ).
+
+map( _, [] ) ->
+    [];
+map( F, [ H | T ] ) ->
+    [ F( H ) | map( F, T ) ].
+
+pmap( F, L ) ->
+    S = self(),
+    Ref = erlang:make_ref(),
+    Pids = map( fun( I ) ->
+                        spawn( fun() ->
+                                       do_f( S, Ref, F, I ) end )
+                end, L ),
+    gather( Pids, Ref ).
+
+do_f( Parent, Ref, F, I ) ->
+    Parent ! { self(), Ref, ( catch F(I))}.
+
+gather( [ Pid | T ], Ref ) ->
+    receive
+        { Pid, Ref, Ret } ->
+            [ Ret | gather( T, Ref ) ]
+    end;
+gather( [], _ ) ->
+    [].

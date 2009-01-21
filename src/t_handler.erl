@@ -150,7 +150,6 @@ rfmt( [ Svc | _Rst ], Type ) when Type == near_me ->
         MList ->
             reformat_friends_data( MList, Svc#services.service )
     end;
-
 rfmt( [ Svc | Rst ], Type ) when Type == direct_messages ->
     case lwtc:nrequest( Svc#services.username, Svc#services.password, Svc#services.service, Type ) of
         { error, _ } ->
@@ -254,6 +253,7 @@ pull_service_data( Login, Password, Service, Request ) ->
 % The mochi json parser returns the keys in binary format
 % so we've got to do some interpretive dance to get erlydtl to like it.
 %
+
 reformat_friends_data( { error, pull_service_data_failed }, _ ) ->
     [];
 reformat_friends_data( [], _ ) ->
@@ -463,5 +463,4 @@ sort_geo_messages( [ Message | Rest ] ) ->
         { name, binary_to_list( Fromuser ) },
         { type, "geo" }
         ] ] ++ sort_geo_messages( Rest ).
-
 

@@ -10,7 +10,7 @@ out( A ) ->
         { match, _, _ } ->
             { redirect, "http://rwc.hellyeah.org/" };
         _ ->
-            case regexp:first_match( Path, ".avi$|.html$|.css$|.js$|.gif$|.jpg$" ) of
+            case regexp:first_match( Path, ".tar.gz|.gz|.avi$|.html$|.css$|.js$|.gif$|.jpg$" ) of
                 { match, X, Y } ->
                     Px = pfactory:new( A ),
                                                 % I know there's a better way to do this but I couldn't get
@@ -24,6 +24,8 @@ out( A ) ->
                             { content, "text/javascript", Px:static( Path ) };
                         ".gif" ->
                             { content, "image/gif", Px:static( Path ) };
+	".tar.gz" ->
+	{ content, "application/x-gzip", Px:static( Path ) };
                         ".jpg" ->
                             { content, "image/jpeg", Px:static( Path ) };
                         ".html" ->

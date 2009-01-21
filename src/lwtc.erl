@@ -82,16 +82,6 @@ update( Info, Message ) ->
                     ( "source=" ++ yaws_api:url_encode( "royalewithcheese" ) ++ "&status=" ++ yaws_api:url_encode( Message ) )
                    }, [], [] ).
 
-%g_update( Info, Message ) ->
-%    Stat = "source="
-%        ++ yaws_api:url_encode( "royalewithcheese" )
-%        ++ "&status=" ++ yaws_api:url_encode( Message ),
-%    http:request( post,
-%                  { url_for_action( update, Info#services.service ),
-%                    headers( Info#services.username, Info#services.password ),
-%                    "application/x-www-form-urlencoded",
-%                    Stat }, [], [] ).
-
 
 near_me( Login, Password, Location ) ->
     near_me( Login, Password, Location, 50 ).
@@ -153,30 +143,21 @@ jsf( Result ) ->
 headers( User, Pass ) ->
     UP = base64:encode( User ++ ":" ++ Pass ),
     Basic = lists:flatten( io_lib:fwrite( "Basic ~s", [ UP ] ) ),
-    [ { "User-Agent", "Dorkpatrol/0.1" }, { "Authorization", Basic } ].
+    [ { "User-Agent", "RWC/0.45" }, { "Authorization", Basic } ].
 
 
 url_for_action( Action, _Service ) when Action == trends ->
     "http://search.twitter.com/statuses/trends.json";
 url_for_action( Action, Service ) ->
-    Head = head_for_service( Service ),
-    Tail = case Action of
-               direct_messages ->
-                   "direct_messages.json";
-               update ->
-                   "statuses/update.json";
-               friends_timeline ->
-                   "statuses/friends_timeline.json?count=100&";
-               user_timeline ->
-                   "statuses/user_timeline.json";
-               public_timeline ->
-                   "statuses/public_timeline.json";
-               update_location ->
-                   "account/update_profile.json";
-               replies ->
-                   "statuses/replies.json"
-           end,
-    Head ++ Tail.
+    head_for_service( Service ) ++ action_path( Action ).
+
+action_path( direct_messages ) -> "direct_messages.json";
+action_path( update ) -> "statuses/update.json";
+action_path( friends_timeline ) -> "statuses/friends_timeline.json?count=100&";
+action_path( user_timeline ) -> "statuses/user_timeline.json";
+action_path( public_timeline ) -> "statuses/public_timeline.json";
+action_path( update_location ) -> "account/update_profile.json";
+action_path( replies ) -> "statuses/replies.json".
 
 
 head_for_service( Service ) when Service == "twitter" ->
