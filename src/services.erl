@@ -3,7 +3,7 @@
 -export( [ e/1, add_service/4, for_user/1, delete/1, by_user/1, cred_for_service/2, all/0 ] ).
 
 -include_lib( "stdlib/include/qlc.hrl" ).
--include( "dorkinator.hrl" ).
+-include( "rwc.hrl" ).
 -license( { mit_license, "http://www.linfo.org/mitlicense.html" } ).
 
 e( Query ) ->
@@ -18,7 +18,7 @@ add_service( OurUserName, Login, Password, Type ) ->
       password = Password,
       service = Type,
       service_key = Skey,
-      idx = binary_to_list(dorkinator:gen_key())
+      idx = binary_to_list(rwc:gen_key())
      },
     mnesia:transaction( fun() ->
                                 mnesia:write( Svc )

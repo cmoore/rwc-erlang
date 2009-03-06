@@ -13,8 +13,8 @@ out( A ) ->
             case regexp:first_match( Path, ".zip|.tar.gz|.gz|.avi$|.html$|.css$|.js$|.gif$|.jpg$" ) of
                 { match, X, Y } ->
                     Px = pfactory:new( A ),
-                                                % I know there's a better way to do this but I couldn't get
-                                                % vdirs working in the yaws config.
+                    % I know there's a better way to do this but I couldn't get
+                    % vdirs working in the yaws config.
                     case string:substr( Path, X, Y ) of
                         ".avi" ->
                             { content, "x-msvideo", Px:static( Path ) };
@@ -24,20 +24,32 @@ out( A ) ->
                             { content, "text/javascript", Px:static( Path ) };
                         ".gif" ->
                             { content, "image/gif", Px:static( Path ) };
-	".tar.gz" ->
-	{ content, "application/x-gzip", Px:static( Path ) };
-	".zip" ->
-	{ content, "application/zip", Px:static( Path ) };
+                        ".tar.gz" ->
+                            { content, "application/x-gzip", Px:static( Path ) };
+                        ".zip" ->
+                            { content, "application/zip", Px:static( Path ) };
                         ".jpg" ->
                             { content, "image/jpeg", Px:static( Path ) };
                         ".html" ->
                             { content, "text/html", Px:static( Path ) }
                     end;
                 nomatch ->
+                    % At this point, the request path does not end in a file suffix that we want to serve statically.
                     case Path of
-                        "hello" ->
-                            Px = pfactory:new( A ),
-                            { html, Px:page( "hello" ) };
+                        % TODO - it should be relatively simple to create a mapping in something like YAML
+                        % TODO - to map paths to handlers.
+                        "viewer" ->
+                            t_handler:out( pfactory:new( A ) );
+                        "login" ->
+                            u_handler:login_handler( A, pfactory:new( A ) );
+                        "logout" ->
+                            u_handler:logout_handler( A, pfactory:new( A ) );
+                        "register" ->
+                            u_handler:register_handler( A, pfactory:new( A ) );
+                        "geo_setup" ->
+                            t_handler:geo_menu( A, pfactory:new( A ) );
+                        "geo_browse_address" ->
+                            t_handler:set_location( A, pfactory:new( A ) );
                         "about" ->
                             Px = pfactory:new( A ),
                             { html, Px:page( "about" ) };
@@ -45,14 +57,8 @@ out( A ) ->
                             Px = pfactory:new( A ),
                             { html, Px:page( "login" ) };
                         _ ->
-                            case lists:nth( 1, string:tokens( Path, "/" ) ) of
-                                "t" ->
-                                    t_handler:out( pfactory:new( A ) );
-                                "u" ->
-                                    u_handler:out( pfactory:new( A ) );
-                                _ ->
-                                    { redirect, "/" }
-                            end
+                            io:format( "Unhandled request: ~p~n", [ Path ] ),
+                            { redirect, "/" }
                     end
             end
     end.

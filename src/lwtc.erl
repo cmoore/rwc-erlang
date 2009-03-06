@@ -46,7 +46,7 @@
          ] ).
 -author( "Clint Moore <hydo@mac.com>" ).
 -version( "0.5" ).
--include( "dorkinator.hrl" ).
+-include( "rwc.hrl" ).
 -license( { mit_license, "http://scutil.com/license.tmpl" } ).
 
 % @spec ( [ 

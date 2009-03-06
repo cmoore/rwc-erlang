@@ -2,6 +2,8 @@
 -module( t_handler ).
 -export( [ out/1,
            tfm/1,
+           set_location/2,
+           geo_menu/2,
            reformat_friends_data/2,
            reformat_services/1,
            remove_non_twitter/1,
@@ -10,7 +12,7 @@
            un_punctuate/1,
            sort_messages/1  ] ).
 -include( "yaws_api.hrl" ).
--include( "dorkinator.hrl" ).
+-include( "rwc.hrl" ).
 -license( { mit_license, "http://www.linfo.org/mitlicense.html" } ).
 
 
@@ -27,8 +29,10 @@ out_handler( Path, Args, Pf ) when Path == "t/delete_service" ->
     delete_service( Args, Pf );
 out_handler( Path, Args, Pf ) when Path == "t/setup" ->
     setup_handler( Args, Pf );
-out_handler( Path, Args, Pf ) when Path == "t/viewer" ->
+
+out_handler( Path, Args, Pf ) when Path == "viewer" ->
     viewer_handler( Args, Pf );
+
 out_handler( Path, Args, Pf ) when Path == "t/post" ->
     tweet_handler( Args, Pf );
 out_handler( Path, Args, Pf ) when Path == "t/g/view" ->
@@ -38,19 +42,18 @@ out_handler( Path, Args, Pf ) when Path == "t/g/enable_address" ->
 out_handler( Path, Args, Pf ) when Path == "t/g/setup" ->
     geo_menu( Args, Pf ).
 
-
 %
 % I need to figure out something nice and elegant to get rid of these case nests.
 % It's really unsightly.
 %
 tweet_handler( A, _ ) ->
-    case dorkinator:auth_info( A ) of
+    case rwc:auth_info( A ) of
         false ->
             { redirect, "/u/login" };
         Px ->
             case( A#arg.req )#http_request.method of
                 'GET' ->
-                    { redirect, "/t/viewer" };
+                    { redirect, "/viewer" };
                 'POST' ->
                     Args = [ { list_to_atom( X ), Y } || { X , Y } <- yaws_api:parse_post( A ) ],
                     case lists:keysearch( message, 1, Args ) of
@@ -70,12 +73,12 @@ tweet_handler( A, _ ) ->
                                     none
                             end
                     end,
-                    { redirect, "/t/viewer" }
+                    { redirect, "/viewer" }
             end
     end.
 
 delete_service( A, _Pf ) ->
-    case dorkinator:auth_info( A ) of
+    case rwc:auth_info( A ) of
         false ->
             { redirect, "/u/login" };
         _Px ->
@@ -83,7 +86,7 @@ delete_service( A, _Pf ) ->
                 'GET' ->
                     { redirect, "/t/setup" };
                 'POST' ->
-                    case dorkinator:validate( A, [ "svc" ], fun validate_field/2 ) of
+                    case rwc:validate( A, [ "svc" ], fun validate_field/2 ) of
                         { [ Service ], [] } ->
                             services:delete( Service ),
                             { redirect, "/t/setup" }
@@ -92,7 +95,7 @@ delete_service( A, _Pf ) ->
     end.
 
 setup_handler( A, Pf ) ->
-    case dorkinator:auth_info( A ) of
+    case rwc:auth_info( A ) of
         false ->
             { redirect, "/u/login" };
         Info ->
@@ -102,7 +105,7 @@ setup_handler( A, Pf ) ->
                                                { services, reformat_services( services:by_user( Info#users.login ) ) }
                                               ] ) };
                 'POST' ->
-                    case dorkinator:validate( A, [
+                    case rwc:validate( A, [
                                                   "account_type",
                                                   "acct_login",
                                                   "acct_password"
@@ -137,9 +140,6 @@ validate_field( "svc", Line ) when length( Line ) > 1 ->
     ok;
 validate_field( "svc", _ ) ->
     { error, "Value is too short." }.
-
-
-
 
 rfmt( [], _Type ) ->
     [];
@@ -184,7 +184,7 @@ remove_non_twitter( [ Sv | Rst ] ) ->
 
 
 public_handler( A, Px ) ->
-    case dorkinator:auth_info( A ) of
+    case rwc:auth_info( A ) of
         false ->
             { redirect, "/u/login" };
         Vx ->
@@ -194,7 +194,7 @@ public_handler( A, Px ) ->
     end.
 
 direct_handler( A, Px ) ->
-    case dorkinator:auth_info( A ) of
+    case rwc:auth_info( A ) of
         false ->
             { redirect, "/u/login" };
         Vx ->
@@ -204,7 +204,7 @@ direct_handler( A, Px ) ->
     end.
 
 near_me( A, Px ) ->
-    case dorkinator:auth_info( A ) of
+    case rwc:auth_info( A ) of
         false ->
             { redirect, "/u/login" };
         Vx ->
@@ -223,7 +223,7 @@ near_me( A, Px ) ->
     end.
 
 viewer_handler( A, Px ) ->
-    case dorkinator:auth_info( A ) of
+    case rwc:auth_info( A ) of
         false ->
             { redirect, "/u/login" };
         Vx ->
@@ -310,7 +310,6 @@ tfm( Message ) ->
          end,
     [ H, M, S ] = string:tokens( Time, ":" ),
     calendar:datetime_to_gregorian_seconds( { { Ic(Year), m_t_n( Month ), Ic(Dom) }, { Ic(H), Ic(M), Ic(S) } } ).
-
 
 % Sorts the messages by time as returned by tfm()
 %
@@ -420,10 +419,10 @@ geo_menu( Args, Page ) ->
     end.
 
 set_location( Args, _Page ) ->
-    case dorkinator:validate( Args, [ "longitude", "latitude" ], fun validate_field/2 ) of
+    case rwc:validate( Args, [ "longitude", "latitude" ], fun validate_field/2 ) of
         { [ Lon, Lat ], [] } ->
             Ts = Lon ++ "," ++ Lat,
-            Fx = dorkinator:auth_info( Args ),
+            Fx = rwc:auth_info( Args ),
             Dx = Fx#users.login ++ "-loc",
             lwtc:keyd_store( Dx, Ts ),
             { redirect, "/t/g/view" };
@@ -440,7 +439,6 @@ shift_to_twitter( [ Px | Rest ] ) ->
         _ ->
             shift_to_twitter( Rest )
     end.
-
 
 sort_geo_messages( [] ) ->
     [];

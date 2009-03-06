@@ -15,7 +15,7 @@
           users/0
          ] ).
 -include_lib( "stdlib/include/qlc.hrl" ).
--include( "dorkinator.hrl" ).
+-include( "rwc.hrl" ).
 -license( { mit_license, "http://www.linfo.org/mitlicense.html" } ).
 
 e( Query ) ->
@@ -37,7 +37,7 @@ find_user( Login, Password ) ->
               qlc:q(
                 [ X || X <- mnesia:table( users ),
                        X#users.login =:= Login,
-                       X#users.password =:= dorkinator:hexdigest( Password ) ]
+                       X#users.password =:= rwc:hexdigest( Password ) ]
                ) )
     end.
     
@@ -47,11 +47,11 @@ find_user( Login, Password ) ->
 add_user( Login, Password ) ->
     add_user( Login, Password, "" ).
 add_user( Login, Password, Auth ) ->
-    Px = dorkinator:hexdigest( Password ),
+    Px = rwc:hexdigest( Password ),
     User = #users{
       login = Login,
       password = Px,
-      service_key = dorkinator:gen_key(),
+      service_key = rwc:gen_key(),
       auth = Auth
      },
     mnesia:transaction( fun() ->

@@ -1,33 +1,16 @@
 
 -module( u_handler ).
 -export( [
-          out/1
+          login_handler/2,
+          logout_handler/2,
+          register_handler/2
          ] ).
 -include( "yaws_api.hrl" ).
--include( "dorkinator.hrl" ).
+-include( "rwc.hrl" ).
 -license( { mit_license, "http://www.linfo.org/mitlicense.html" } ).
 
-out( Pf ) ->
-    Args = Pf:server_args(),
-    Path = Args#arg.appmoddata,
-    case Path of
-        "u/logout" ->
-            logout_handler( Args, Pf );
-        "u/register" ->
-            register_handler( Args, Pf );
-        "u/login" ->
-            login_handler( Args, Pf );
-        _ ->
-            case dorkinator:auth_info( Args ) of
-                false ->
-                    login_handler( Args, Pf );
-                _ ->
-                    { redirect, "/t/viewer" }
-            end
-    end.
-
 logout_handler( A, _Pf ) ->
-    case dorkinator:auth_info( A ) of
+    case rwc:auth_info( A ) of
         false ->
             { redirect, "/u/login" };
         Vx ->
@@ -40,7 +23,7 @@ login_handler( A, Pf ) ->
         'GET' ->
             { html, Pf:page( "login" ) };
         'POST' ->
-            case dorkinator:validate( A, [
+            case rwc:validate( A, [
                                           "login",
                                           "password"
                                           ], fun validate_field/2 ) of
@@ -50,17 +33,14 @@ login_handler( A, Pf ) ->
                             { html, Pf:page( "login", [ { error, "Bad login/password." } ] ) };
                         Vx ->
                             [ Px | _ ] = Vx,
-                            AuthKey = binary_to_list(dorkinator:gen_key()),
+                            AuthKey = binary_to_list(rwc:gen_key()),
                             users:update_auth( Px#users.login, AuthKey ),
-                            [ { html, Pf:page( "qdirect" ) }, dorkinator:format_cookie( #session{ key = AuthKey } ) ]
+                            [ { html, Pf:page( "qdirect" ) }, rwc:format_cookie( #session{ key = AuthKey } ) ]
                     end;
                 _ ->
                     { html, Pf:page( "login", [{error,"Bad login/password."}])}
             end
     end.
-
-short_value() ->
-    { error, "Value is too short!" }.
 
 validate_field( "user_login", Login ) when length( Login ) > 1 ->
     ok;
@@ -79,12 +59,15 @@ validate_field( "password", _ ) ->
 validate_field( "login", _ ) ->
     ok.
 
+short_value() ->
+    { error, "Value is too short!" }.
+
 register_handler( A, Pf ) ->
     case (A#arg.req)#http_request.method of
         'GET' ->
             { html, Pf:page( "register" ) };
         'POST' ->
-            case dorkinator:validate( A, [
+            case rwc:validate( A, [
                                           "user_login",
                                           "user_password",
                                           "user_email"
@@ -95,7 +78,7 @@ register_handler( A, Pf ) ->
                             { html, Pf:page( "register", [ { error, "You'll have to pick a different username." } ] ) };
                         [] ->
                             case users:write(
-                                   #users { login = Login, password = dorkinator:hexdigest( Password ), email = Email, service_key = dorkinator:gen_key() }
+                                   #users { login = Login, password = rwc:hexdigest( Password ), email = Email, service_key = rwc:gen_key() }
                                   ) of
                                 { atomic, ok } ->
                                     { html, Pf:page( "login", [ { error, "Successful!  (Start with the setup link at the top after you log in)" } ] ) };

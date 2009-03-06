@@ -8,7 +8,6 @@
           gen_key/0,
           auth_info/1,
           build_templates/0,
-          single_message/0,
           init_database/0,
           rebuild_tables/0,
           format_cookie/1,
@@ -17,7 +16,7 @@
           pmap/2
          ] ).
 
--include( "dorkinator.hrl" ).
+-include( "rwc.hrl" ).
 -include( "yaws.hrl" ).
 -include( "yaws_api.hrl" ).
 -include_lib( "stdlib/include/qlc.hrl" ).
@@ -52,17 +51,10 @@ start() ->
     yaws_api:setconf( GC, [[ SC ]] ).
 
 build_templates() ->
-    TemplateList = [ "hello", "geo_setup", "toolbar", "register", "about", "login", "tweet", "header", "footer", "index", "catastrophic","setup", "qdirect", "viewer" ],
+    TemplateList = [ "hello", "geo_setup", "toolbar", "register",
+                     "about", "login", "tweet", "header", "footer",
+                     "index", "catastrophic","setup", "qdirect", "viewer" ],
     [ erlydtl_compiler:compile( "./templates/" ++ X ++ ".html", X, [ { out_dir, "./ebin" } ] ) || X <- TemplateList ].
-
-single_message() ->
-    case lwtc:setup( [ { login, "hydo" }, { password, "_______" } ] ) of
-        { ok, Id } ->
-            [ Px | _ ] = lwtc:request( Id, friends_timeline ),
-            Px;
-        _ ->
-            false
-    end.
 
 rebuild_tables() ->
     mnesia:delete_table( users ),
@@ -106,6 +98,10 @@ validate(A, Fields, Fun) ->
                       Acc1
               end
       end, {[], []}, lists:reverse(Fields)).
+
+
+
+
 
 format_cookie( Px ) ->
     Cookie = yaws_api:new_cookie_session( Px, 259200 ),
