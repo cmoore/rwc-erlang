@@ -1,52 +1,28 @@
 
 -module( t_handler ).
--export( [ out/1,
-           tfm/1,
-           set_location/2,
-           geo_menu/2,
+-export( [ tfm/1,
+           set_location/1,
+           geo_menu/1,
            reformat_friends_data/2,
            reformat_services/1,
            remove_non_twitter/1,
            urlize/2,
+           tweet_handler/1,
            shift_to_twitter/1,
            un_punctuate/1,
+           delete_service/1,
+           viewer_handler/1,
+           setup_handler/1,
            sort_messages/1  ] ).
 -include( "yaws_api.hrl" ).
 -include( "rwc.hrl" ).
 -license( { mit_license, "http://www.linfo.org/mitlicense.html" } ).
 
-
-out( Pf ) ->
-    A = Pf:server_args(),
-    Path = A#arg.appmoddata,
-    out_handler( Path, A, Pf ).
-
-out_handler( Path, Args, Pf ) when Path == "t/public" ->
-    public_handler( Args, Pf );
-out_handler( Path, Args, Pf ) when Path == "t/direct" ->
-    direct_handler( Args, Pf );
-out_handler( Path, Args, Pf ) when Path == "t/delete_service" ->
-    delete_service( Args, Pf );
-out_handler( Path, Args, Pf ) when Path == "t/setup" ->
-    setup_handler( Args, Pf );
-
-out_handler( Path, Args, Pf ) when Path == "viewer" ->
-    viewer_handler( Args, Pf );
-
-out_handler( Path, Args, Pf ) when Path == "t/post" ->
-    tweet_handler( Args, Pf );
-out_handler( Path, Args, Pf ) when Path == "t/g/view" ->
-    near_me( Args, Pf );
-out_handler( Path, Args, Pf ) when Path == "t/g/enable_address" ->
-    set_location( Args, Pf );
-out_handler( Path, Args, Pf ) when Path == "t/g/setup" ->
-    geo_menu( Args, Pf ).
-
 %
 % I need to figure out something nice and elegant to get rid of these case nests.
 % It's really unsightly.
 %
-tweet_handler( A, _ ) ->
+tweet_handler( A ) ->
     case rwc:auth_info( A ) of
         false ->
             { redirect, "/u/login" };
@@ -77,30 +53,31 @@ tweet_handler( A, _ ) ->
             end
     end.
 
-delete_service( A, _Pf ) ->
+delete_service( A ) ->
     case rwc:auth_info( A ) of
         false ->
             { redirect, "/u/login" };
         _Px ->
             case ( A#arg.req)#http_request.method of
                 'GET' ->
-                    { redirect, "/t/setup" };
+                    { redirect, "/setup" };
                 'POST' ->
                     case rwc:validate( A, [ "svc" ], fun validate_field/2 ) of
                         { [ Service ], [] } ->
                             services:delete( Service ),
-                            { redirect, "/t/setup" }
+                            { redirect, "/setup" }
                     end
             end
     end.
 
-setup_handler( A, Pf ) ->
+setup_handler( A ) ->
     case rwc:auth_info( A ) of
         false ->
             { redirect, "/u/login" };
         Info ->
             case (A#arg.req)#http_request.method of
                 'GET' ->
+                    Pf = pfactory:new( A ),
                     { html, Pf:page( "setup", [
                                                { services, reformat_services( services:by_user( Info#users.login ) ) }
                                               ] ) };
@@ -112,6 +89,7 @@ setup_handler( A, Pf ) ->
                                                  ], fun validate_field/2 ) of
                         { [ Type, Login, Password ], [] } ->
                             services:add_service( Info#users.login, Login, Password, Type ),
+                            Pf = pfactory:new( A ),
                             { html, Pf:page( "setup", [
                                                        { services, reformat_services( services:by_user( Info#users.login ) ) }
                                                       ] ) }
@@ -222,11 +200,12 @@ near_me( A, Px ) ->
             end
     end.
 
-viewer_handler( A, Px ) ->
+viewer_handler( A ) ->
     case rwc:auth_info( A ) of
         false ->
             { redirect, "/u/login" };
         Vx ->
+            Px = pfactory:new( A ),
             All_Messages = rfmt( services:by_user( Vx#users.login ), replies ) ++
                 rfmt( services:by_user( Vx#users.login ), friends_timeline ) ++
                 rfmt( services:by_user( Vx#users.login ), direct_messages ),
@@ -410,7 +389,8 @@ reformat_services( [ Px | Rst ] ) ->
 
 %% Begin the geo stuff.
 
-geo_menu( Args, Page ) ->
+geo_menu( Args ) ->
+    Page = pfactory:new( Args ),
     case ( Args#arg.req )#http_request.method of
         'GET' ->
             { html, Page:page( "geo_setup" ) };
@@ -418,7 +398,7 @@ geo_menu( Args, Page ) ->
             { html, Page:page( "geo_setup", [ { error, "In post" } ] ) }
     end.
 
-set_location( Args, _Page ) ->
+set_location( Args ) ->
     case rwc:validate( Args, [ "longitude", "latitude" ], fun validate_field/2 ) of
         { [ Lon, Lat ], [] } ->
             Ts = Lon ++ "," ++ Lat,

@@ -39,17 +39,23 @@ out( A ) ->
                         % TODO - it should be relatively simple to create a mapping in something like YAML
                         % TODO - to map paths to handlers.
                         "viewer" ->
-                            t_handler:out( pfactory:new( A ) );
+                            t_handler:viewer_handler( A );
+                        "delete_service" ->
+                            t_handler:delete_service( A );
+                        "setup" ->
+                            t_handler:setup_handler( A );
+                        "post" ->
+                            t_handler:tweet_handler( A );
                         "login" ->
-                            u_handler:login_handler( A, pfactory:new( A ) );
+                            u_handler:login_handler( A );
                         "logout" ->
-                            u_handler:logout_handler( A, pfactory:new( A ) );
+                            u_handler:logout_handler( A );
                         "register" ->
-                            u_handler:register_handler( A, pfactory:new( A ) );
+                            u_handler:register_handler( A );
                         "geo_setup" ->
-                            t_handler:geo_menu( A, pfactory:new( A ) );
+                            t_handler:geo_menu( A );
                         "geo_browse_address" ->
-                            t_handler:set_location( A, pfactory:new( A ) );
+                            t_handler:set_location( A );
                         "about" ->
                             Px = pfactory:new( A ),
                             { html, Px:page( "about" ) };

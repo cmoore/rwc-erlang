@@ -24,5 +24,5 @@ erl -setcookie monster \
     -pa $YAWS_DIR -pa $YAWS_DIR/include -pa $YAWS_DIR/ebin $THIS_DIR/ebin \
     -mnesia dir $MNESIA_DIR \
     -mnesia auto_repair true \
-    -yaws embedded true -s dorkinator -name $NAME
+    -yaws embedded true -s rwc -name $NAME
 

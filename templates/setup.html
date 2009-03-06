@@ -3,7 +3,7 @@
 
 <div style="font-weight:bold;">
   Add an account
-  <form method="POST" action="/t/setup">
+  <form method="POST" action="/setup">
     <table style="width:200px;border:1px solid grey;">
       <tr><td>Type</td><td>
         <select name="account_type">
@@ -19,7 +19,7 @@
   <table style="width:200px;margin-top:5px;border:1px solid grey;">
     <tr><td>Service</td><td>Login</td></tr>
     {% for e in services %}
-      <form method="POST" action="/t/delete_service">
+      <form method="POST" action="/delete_service">
         <input type="hidden" name="svc" value="{{ e.idx }}">
         <tr><td>{{ e.service }}</td><td>{{ e.login }}</td><td><input type="submit" value="X"></td></tr>
       </form>

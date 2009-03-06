@@ -1,5 +1,5 @@
 
--module( dorkinator ).
+-module( rwc ).
 -export( [
           start/0,
           validate/3,
