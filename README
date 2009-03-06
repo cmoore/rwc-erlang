@@ -37,7 +37,7 @@ Interesting files:
 
 src/core_handler.erl - This directs requests to the different modules or serves
     local files from www/
-src/dorkinator.erl - Management controls, statup, shutdown, database
+src/rwc.erl - Management controls, statup, shutdown, database
     initialization, etc.
 src/pfactory.erl - The page factory.  Handles template params, does a few sugary
     things to make the templating easier.
@@ -45,8 +45,8 @@ src/services.erl and src/users.erl - Shortcut functions for pulling data from
     the users and services mnesia tables.
 src/u_handler.erl - User management.  Registration, passwords, etc.
 src/t_handler.erl - The bulk of the viewer code and presentation.
-src/lwtc.erl - My own little JSON twitter/identica client.  There are others
-    and better ones out there.  I wrote this because I am still learning 
+src/lwtc.erl - My own little JSON twitter/identica client.  There are other
+    and better ones out there but I wrote this because I am still learning 
     Erlang.  It's the journey not the destination, yadda yadda.
 
 This code is done.
@@ -64,8 +64,3 @@ my purposes.
    One thing that isn't done is direct message support.  That's the only feature
 that this code is missing.  I just always clicked through to the service to check
 them.  So that's one thing that, if you are feeling all macho, you could add. ;)
-
-   Now that I've written this, I also feel compelled to add an apology for the 
-almost complete lack of comments.  I'm horrible at it and I should be ashamed of
-myself.  I'll probably spend a Saturday sometime soon commenting the weirder areas
-of the code.
