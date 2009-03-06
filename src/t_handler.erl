@@ -148,7 +148,6 @@ rfmt( [ Svc | Rst ], Type ) ->
     end.
 
 
-
 remove_non_twitter( [] ) ->
     [];
 remove_non_twitter( [ Sv | Rst ] ) ->
@@ -157,28 +156,6 @@ remove_non_twitter( [ Sv | Rst ] ) ->
             lists:append( [ [ Sv ] ], remove_non_twitter( Rst ) );
         _ ->
             lists:append( [ [ ] ], remove_non_twitter( Rst ) )
-    end.
-
-
-
-public_handler( A, Px ) ->
-    case rwc:auth_info( A ) of
-        false ->
-            { redirect, "/u/login" };
-        Vx ->
-            Msg = [ reformat_friends_data(lwtc:nrequest( X#services.username, X#services.password, X#services.service, public_timeline ), X#services.service ) ||
-                      X <- services:by_user( Vx#users.login ) ],
-            { html, Px:page( "viewer", [ { twittermessages, lists:reverse( Msg ) } ] ) }
-    end.
-
-direct_handler( A, Px ) ->
-    case rwc:auth_info( A ) of
-        false ->
-            { redirect, "/u/login" };
-        Vx ->
-            Msg = [ lwtc:nrequest( X#services.username, X#services.password, X#services.service, direct_messages ) ||
-                      X <- lists:flatten( remove_non_twitter( services:by_user( Vx#users.login ) ) ) ],
-            { html, Px:page( "viewer", [ { twittermessages, lists:reverse( Msg ) } ] ) }
     end.
 
 near_me( A, Px ) ->
