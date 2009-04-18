@@ -409,23 +409,32 @@ shift_to_twitter( [ Px | Rest ] ) ->
 
 sort_geo_messages( [ Message | Rest ] ) ->
     { struct, List } = Message,
-    { value, { <<"text">>, Text } } = lists:keysearch( <<"text">>, 1, List ),
-    { value, { <<"from_user_id">>, Userid }} = lists:keysearch( <<"from_user_id">>, 1, List ),
-    { value, { <<"from_user">>, Fromuser }} = lists:keysearch( <<"from_user">>, 1, List ),
-    { value, { <<"profile_image_url">>, Picture }} = lists:keysearch( <<"profile_image_url">>, 1, List ),
-    { value, { <<"created_at">>, Created }} = lists:keysearch( <<"created_at">>, 1, List ),
-    { value, { <<"id">>, Id }} = lists:keysearch( <<"id">>, 1, List ),
-    [ [ 
-        { id, Id },
-        { svc, "twitter" },
-        { text, urlize( Text, "twitter" ) },
-        { picture, binary_to_list( Picture ) },
-        { created, binary_to_list( Created ) },
-        { user_id, Userid },
-        { screen_name, binary_to_list( Fromuser ) },
-        { name, binary_to_list( Fromuser ) },
-        { type, "geo" }
-        ] ] ++ sort_geo_messages( Rest );
+    { value, { <<"location">>, Loc } } = lists:keysearch( <<"location">>, 1, List ),
+    case binary_to_list( Loc ) of
+        "Earth" ->
+            sort_geo_messages( Rest );
+        "Hub" ->
+            sort_geo_messages( Rest );
+        _ ->
+            { value, { <<"text">>, Text } } = lists:keysearch( <<"text">>, 1, List ),
+            { value, { <<"from_user_id">>, Userid }} = lists:keysearch( <<"from_user_id">>, 1, List ),
+            { value, { <<"from_user">>, Fromuser }} = lists:keysearch( <<"from_user">>, 1, List ),
+            { value, { <<"profile_image_url">>, Picture }} = lists:keysearch( <<"profile_image_url">>, 1, List ),
+            { value, { <<"created_at">>, Created }} = lists:keysearch( <<"created_at">>, 1, List ),
+            { value, { <<"id">>, Id }} = lists:keysearch( <<"id">>, 1, List ),
+            [ [ 
+                { id, Id },
+                { svc, "twitter" },
+                { text, urlize( Text, "twitter" ) },
+                { picture, binary_to_list( Picture ) },
+                { created, binary_to_list( Created ) },
+                { user_id, Userid },
+                { screen_name, binary_to_list( Fromuser ) },
+                { name, binary_to_list( Fromuser ) },
+                { type, "geo" }
+               ] ] ++ sort_geo_messages( Rest )
+    end;
+
 sort_geo_messages( [] ) ->
     [].
 
