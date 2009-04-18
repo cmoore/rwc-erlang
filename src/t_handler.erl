@@ -37,8 +37,16 @@ tweet_handler( A ) ->
                         { value, { message, Message } } ->
                             case lists:keysearch( post_identica, 1, Args ) of
                                 { value, { _, _ } } ->
-                                    Pc = services:cred_for_service( Px#users.login, "identica" ),
-                                    lwtc:update( Pc, Message );
+
+                                    % I'm still not completely convinced that creating a temporary variable
+                                    % is cleaner then having one function inside another.
+                                    % The indenting helps though.
+
+                                    %Pc = services:cred_for_service( Px#users.login, "identica" ),
+                                    
+                                    lwtc:update(
+                                      (services:cred_for_service( Px#users.login, "identica" )),
+                                      Message );
                                 _ ->
                                     none
                             end,
