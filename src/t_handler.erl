@@ -411,6 +411,8 @@ sort_geo_messages( [ Message | Rest ] ) ->
     { struct, List } = Message,
     { value, { <<"location">>, Loc } } = lists:keysearch( <<"location">>, 1, List ),
     case binary_to_list( Loc ) of
+	"GLOBAL" ->
+		sort_geo_messages( Rest );
         "Earth" ->
             sort_geo_messages( Rest );
         "Hub" ->
