@@ -7,6 +7,7 @@
            reformat_services/1,
            remove_non_twitter/1,
            urlize/2,
+           near_me/1,
            tweet_handler/1,
            shift_to_twitter/1,
            un_punctuate/1,
@@ -158,17 +159,18 @@ remove_non_twitter( [ Sv | Rst ] ) ->
             lists:append( [ [ ] ], remove_non_twitter( Rst ) )
     end.
 
-near_me( A, Px ) ->
+near_me( A ) ->
     case rwc:auth_info( A ) of
         false ->
-            { redirect, "/u/login" };
+            { redirect, "/login" };
         Vx ->
             Key = Vx#users.login ++ "-loc",
             case lwtc:keyd_lookup( Key ) of
                 { ok, Geocode } ->
+                    Px = pfactory:new( A ),
                     case shift_to_twitter( services:by_user( Vx#users.login ) ) of
                         [] ->
-                            { redirect, "/t/g/setup" };
+                            { redirect, "/geo_setup" };
                         Info ->
                             { struct, List } = lwtc:near_me( Info#services.username, Info#services.password, Geocode ),
                             { value, { <<"results">>, Messages } } = lists:keysearch( <<"results">>, 1, List ),
@@ -382,9 +384,9 @@ set_location( Args ) ->
             Fx = rwc:auth_info( Args ),
             Dx = Fx#users.login ++ "-loc",
             lwtc:keyd_store( Dx, Ts ),
-            { redirect, "/t/g/view" };
+            { redirect, "/near_me" };
         _ ->
-            { redirect, "/t/g/setup" }
+            { redirect, "/geo_setup" }
     end.
 
 shift_to_twitter( [] ) ->
@@ -397,8 +399,6 @@ shift_to_twitter( [ Px | Rest ] ) ->
             shift_to_twitter( Rest )
     end.
 
-sort_geo_messages( [] ) ->
-    [];
 sort_geo_messages( [ Message | Rest ] ) ->
     { struct, List } = Message,
     { value, { <<"text">>, Text } } = lists:keysearch( <<"text">>, 1, List ),
@@ -417,5 +417,7 @@ sort_geo_messages( [ Message | Rest ] ) ->
         { screen_name, binary_to_list( Fromuser ) },
         { name, binary_to_list( Fromuser ) },
         { type, "geo" }
-        ] ] ++ sort_geo_messages( Rest ).
+        ] ] ++ sort_geo_messages( Rest );
+sort_geo_messages( [] ) ->
+    [].
 

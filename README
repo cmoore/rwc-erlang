@@ -49,18 +49,3 @@ src/lwtc.erl - My own little JSON twitter/identica client.  There are other
     and better ones out there but I wrote this because I am still learning 
     Erlang.  It's the journey not the destination, yadda yadda.
 
-This code is done.
-
-     Ok, well, of course there are always improvements that can be made, 
-especially given my elementary level erlang experience.  I think though that all
-too often developers, myself included, impulsively pick at their code as opposed
-to trying new and more challenging projects.  In an effort to break that habit,
-I'm calling this project "done".  I wanted a twitter and identica client that 
-can post to either or both of the services and that aggregates the two services 
-into one timeline and I did it.  In six months from now I'll look back on this 
-code and cringe I'm sure, but it does work and it works rather well at least for
-my purposes.
-
-   One thing that isn't done is direct message support.  That's the only feature
-that this code is missing.  I just always clicked through to the service to check
-them.  So that's one thing that, if you are feeling all macho, you could add. ;)

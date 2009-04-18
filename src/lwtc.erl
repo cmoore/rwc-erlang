@@ -42,7 +42,8 @@
 -export( [
           setup/1, request/3, request/2,
           update/2, update_location/2,
-          near_me/3, near_me/4, nrequest/4
+          near_me/3, near_me/4, nrequest/4,
+          keyd_store/2, keyd_lookup/1
          ] ).
 -author( "Clint Moore <hydo@mac.com>" ).
 -version( "0.5" ).
@@ -84,10 +85,10 @@ update( Info, Message ) ->
 
 
 near_me( Login, Password, Location ) ->
-    near_me( Login, Password, Location, 50 ).
+    near_me( Login, Password, Location, "50" ).
 
-near_me( Login, Password, Location, Length ) ->
-    Message = Location ++ "," ++ Length ++ "km",
+near_me( Login, Password, Location, Distance ) ->
+    Message = Location ++ "," ++ Distance ++ "km",
     Yoorl = "http://search.twitter.com/search.json?rpp=100&geocode="
         ++ yaws_api:url_encode( Message ),
     json_request( get, Login, Password, Yoorl ).

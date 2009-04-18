@@ -56,6 +56,8 @@ out( A ) ->
                             t_handler:geo_menu( A );
                         "geo_browse_address" ->
                             t_handler:set_location( A );
+                        "near_me" ->
+                            t_handler:near_me( A );
                         "about" ->
                             Px = pfactory:new( A ),
                             { html, Px:page( "about" ) };
