@@ -92,10 +92,10 @@ setup_handler( A ) ->
                                               ] ) };
                 'POST' ->
                     case rwc:validate( A, [
-                                                  "account_type",
-                                                  "acct_login",
-                                                  "acct_password"
-                                                 ], fun validate_field/2 ) of
+                                           "account_type",
+                                           "acct_login",
+                                           "acct_password"
+                                          ], fun validate_field/2 ) of
                         { [ Type, Login, Password ], [] } ->
                             services:add_service( Info#users.login, Login, Password, Type ),
                             Pf = pfactory:new( A ),
@@ -440,7 +440,6 @@ sort_geo_messages( [ Message | Rest ] ) ->
                 { type, "geo" }
                ] ] ++ sort_geo_messages( Rest )
     end;
-
 sort_geo_messages( [] ) ->
     [].
 

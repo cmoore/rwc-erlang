@@ -14,9 +14,9 @@ You'll need:
 2 - Copy start.sh.sample to start.sh and change YAWS_DIR and NAME if you like.
 3 - Run start.sh and see what happens
 4 - Assuming it started up correctly and after a few seconds you get the yaws
-    message telling you it's running, run "dorkinator:init_database()".  This 
+    message telling you it's running, run "rwc:init_database()".  This 
     will set the mnesia tables up.
-5 - Now, do a "dorkinator:halt()." and start it back up again.
+5 - Now, do a "rwc:halt()." and start it back up again.
 
 Most of the stuff here is fairly self contained.  There are a few tunables in
 src/dorkinator.erl including the listening port.  Otherwise you should be able
