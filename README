@@ -19,7 +19,7 @@ You'll need:
 5 - Now, do a "rwc:halt()." and start it back up again.
 
 Most of the stuff here is fairly self contained.  There are a few tunables in
-src/dorkinator.erl including the listening port.  Otherwise you should be able
+src/rwc.erl including the listening port.  Otherwise you should be able
 to just run ./start.sh and open a browser to localhost:3000.  Reports on the
 success or failure of this are definitely welcomed.
 
