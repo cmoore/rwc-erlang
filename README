@@ -1,51 +1,7 @@
 
 ROYALE WITH CHEESE
 
-This is/will be a twitter and identica client geared toward the iphone but 
-will work in any browser.
+This project is going away, probably tonight though we'll see how I hold out.
 
-GETTING IT RUNNING -
-
-You'll need:
-- erlang
-- yaws
-
-1 - Copy Emakefile.sample to Emakefile and change the paths for Yaws and xmerl
-2 - Copy start.sh.sample to start.sh and change YAWS_DIR and NAME if you like.
-3 - Run start.sh and see what happens
-4 - Assuming it started up correctly and after a few seconds you get the yaws
-    message telling you it's running, run "rwc:init_database()".  This 
-    will set the mnesia tables up.
-5 - Now, do a "rwc:halt()." and start it back up again.
-
-Most of the stuff here is fairly self contained.  There are a few tunables in
-src/rwc.erl including the listening port.  Otherwise you should be able
-to just run ./start.sh and open a browser to localhost:3000.  Reports on the
-success or failure of this are definitely welcomed.
-
-Usage -
-
-Once it's built and running, go to localhost:3000 and register.  Then you can use
-the [Setup] toolbar option to add twitter and identi.ca accounts.  When you are
-done, go to the [Viewer] link and, well, you'll see.
-
-This code has been tested on
-- Mac OS X / Server 10.5 using the MacPorts build of Erlang and YAWS.
-- FreeBSD / using the ports version of Erlang and YAWS.
-
-Interesting files:
-
-src/core_handler.erl - This directs requests to the different modules or serves
-    local files from www/
-src/rwc.erl - Management controls, statup, shutdown, database
-    initialization, etc.
-src/pfactory.erl - The page factory.  Handles template params, does a few sugary
-    things to make the templating easier.
-src/services.erl and src/users.erl - Shortcut functions for pulling data from
-    the users and services mnesia tables.
-src/u_handler.erl - User management.  Registration, passwords, etc.
-src/t_handler.erl - The bulk of the viewer code and presentation.
-src/lwtc.erl - My own little JSON twitter/identica client.  There are other
-    and better ones out there but I wrote this because I am still learning 
-    Erlang.  It's the journey not the destination, yadda yadda.
+Take a look at [mecha_server](http://github.com/hydo/mecha_server/tree) for the new code if you are interested.
 
