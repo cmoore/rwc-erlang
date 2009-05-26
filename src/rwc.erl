@@ -35,26 +35,27 @@ start() ->
     make:all(),
     crypto:start(),
     inets:start(),
-    application:start( yaws ),
     application:start( ecouch ),
-    GC = yaws_config:make_default_gconf( false, "" ),
-    SC = #sconf{ port = 3000,
-                 servername = "localhost",
-                 listen = { 0,0,0,0 },
-                 docroot = "www",
-                 appmods = [ { "/", core_handler } ]
-                },
+    application:start( yaws ),
+    %GC = yaws_config:make_default_gconf( false, "" ),
+    %SC = #sconf{ port = 3000,
+    %             servername = "localhost",
+    %             listen = { 0,0,0,0 },
+    %             docroot = "www",
+    %             appmods = [ { "/", core_handler } ]
+    %            },
     mnesia:start(),
     % mnesia:wait_for_tables( [  services, users ], 2000 ),
-    erlydtl:create_parser(),
-    build_templates(),
-    yaws_api:setconf( GC, [[ SC ]] ).
+    %erlydtl:create_parser(),
+    build_templates().
+    %yaws_api:setconf( GC, [[ SC ]] ),
+    %yaws:start_embedded().
 
 build_templates() ->
     TemplateList = [ "hello", "geo_setup", "toolbar", "register",
                      "about", "login", "tweet", "header", "footer",
                      "index", "catastrophic","setup", "qdirect", "viewer" ],
-    [ erlydtl_compiler:compile( "./templates/" ++ X ++ ".html", X, [ { out_dir, "./ebin" } ] ) || X <- TemplateList ].
+    [ erlydtl_compiler:compile( "./deps/rwc/templates/" ++ X ++ ".html", X, [ { out_dir, "./ebin" } ] ) || X <- TemplateList ].
 
 rebuild_tables() ->
     mnesia:delete_table( users ),
