@@ -128,6 +128,7 @@ validate_field( "svc", Line ) when length( Line ) > 1 ->
 validate_field( "svc", _ ) ->
     { error, "Value is too short." }.
 
+
 rfmt( [], _Type ) ->
     [];
 rfmt( [ Svc | _Rst ], Type ) when Type == near_me ->
@@ -315,7 +316,7 @@ m_t_n( Month ) ->
 %
 urlize( Message, Service ) ->
     list_to_binary(
-      string:join( [ un_punctuate( yoorl( X, Service ) ) || X <- string:tokens( binary_to_list(Message), " " ) ], " " )
+      string:join( [ yoorl( X, Service ) || X <- string:tokens( binary_to_list(Message), " " ) ], " " )
      ).
 
 yoorl( X, Service ) ->
@@ -358,7 +359,7 @@ yoorl( X, Service ) ->
                     Urlized
             end;
         _ ->
-            Urlized
+            un_punctuate( Urlized )
     end.
 
 % Ah, much better than what was here before.

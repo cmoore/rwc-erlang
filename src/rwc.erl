@@ -37,19 +37,8 @@ start() ->
     inets:start(),
     application:start( ecouch ),
     application:start( yaws ),
-    %GC = yaws_config:make_default_gconf( false, "" ),
-    %SC = #sconf{ port = 3000,
-    %             servername = "localhost",
-    %             listen = { 0,0,0,0 },
-    %             docroot = "www",
-    %             appmods = [ { "/", core_handler } ]
-    %            },
     mnesia:start(),
-    % mnesia:wait_for_tables( [  services, users ], 2000 ),
-    %erlydtl:create_parser(),
     build_templates().
-    %yaws_api:setconf( GC, [[ SC ]] ),
-    %yaws:start_embedded().
 
 build_templates() ->
     TemplateList = [ "hello", "geo_setup", "toolbar", "register",
@@ -99,9 +88,6 @@ validate(A, Fields, Fun) ->
                       Acc1
               end
       end, {[], []}, lists:reverse(Fields)).
-
-
-
 
 
 format_cookie( Px ) ->
