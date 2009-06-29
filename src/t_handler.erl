@@ -24,88 +24,76 @@
 % It's really unsightly.
 %
 tweet_handler( A ) ->
-    case rwc:auth_info( A ) of
-        false ->
-            { redirect, "/u/login" };
-        Px ->
-            case( A#arg.req )#http_request.method of
-                'GET' ->
-                    { redirect, "/viewer" };
-                'POST' ->
-                    Args = [ { list_to_atom( X ), Y } || { X , Y } <- yaws_api:parse_post( A ) ],
-                    case lists:keysearch( message, 1, Args ) of
-                        { value, { message, Message } } ->
-                            case lists:keysearch( post_identica, 1, Args ) of
-                                { value, { _, _ } } ->
-
-                                    % I'm still not completely convinced that creating a temporary variable
-                                    % is cleaner then having one function inside another.
-                                    % The indenting helps though.
-
-                                    %Pc = services:cred_for_service( Px#users.login, "identica" ),
-                                    
-                                    lwtc:update(
-                                      (services:cred_for_service( Px#users.login, "identica" )),
-                                      Message );
-                                _ ->
-                                    none
-                            end,
-                            case lists:keysearch( post_twitter, 1, Args ) of
-                                { value, { _, _ } } ->
-                                    Rc = services:cred_for_service( Px#users.login, "twitter" ),
-                                    lwtc:update( Rc, Message );
-                                _ ->
-                                    none
-                            end
+    Px = rwc:auth_info( A ),
+    case( A#arg.req )#http_request.method of
+        'GET' ->
+            { redirect, "/viewer" };
+        'POST' ->
+            Args = [ { list_to_atom( X ), Y } || { X , Y } <- yaws_api:parse_post( A ) ],
+            case lists:keysearch( message, 1, Args ) of
+                { value, { message, Message } } ->
+                    case lists:keysearch( post_identica, 1, Args ) of
+                        { value, { _, _ } } ->
+                            
+                                                % I'm still not completely convinced that creating a temporary variable
+                                                % is cleaner then having one function inside another.
+                                                % The indenting helps though.
+                            
+                                                %Pc = services:cred_for_service( Px#users.login, "identica" ),
+                            
+                            lwtc:update(
+                              (services:cred_for_service( Px#users.login, "identica" )),
+                              Message );
+                        _ ->
+                            none
                     end,
-                    { redirect, "/viewer" }
-            end
+                    case lists:keysearch( post_twitter, 1, Args ) of
+                        { value, { _, _ } } ->
+                            Rc = services:cred_for_service( Px#users.login, "twitter" ),
+                            lwtc:update( Rc, Message );
+                        _ ->
+                            none
+                    end
+            end,
+            { redirect, "/viewer" }
     end.
 
 delete_service( A ) ->
-    case rwc:auth_info( A ) of
-        false ->
-            { redirect, "/u/login" };
-        _Px ->
-            case ( A#arg.req)#http_request.method of
-                'GET' ->
-                    { redirect, "/setup" };
-                'POST' ->
-                    case rwc:validate( A, [ "svc" ], fun validate_field/2 ) of
-                        { [ Service ], [] } ->
-                            services:delete( Service ),
-                            { redirect, "/setup" }
-                    end
+    case ( A#arg.req)#http_request.method of
+        'GET' ->
+            { redirect, "/setup" };
+        'POST' ->
+            case rwc:validate( A, [ "svc" ], fun validate_field/2 ) of
+                { [ Service ], [] } ->
+                    services:delete( Service ),
+                    { redirect, "/setup" }
             end
     end.
 
 setup_handler( A ) ->
-    case rwc:auth_info( A ) of
-        false ->
-            { redirect, "/u/login" };
-        Info ->
-            case (A#arg.req)#http_request.method of
-                'GET' ->
+    Info = rwc:auth_info( A ),
+    case (A#arg.req)#http_request.method of
+        'GET' ->
+            Pf = pfactory:new( A ),
+            { html, Pf:page( "setup", [
+                                       { services, reformat_services( services:by_user( Info#users.login ) ) }
+                                      ] ) };
+        'POST' ->
+            case rwc:validate( A, [
+                                   "account_type",
+                                   "acct_login",
+                                   "acct_password"
+                                  ], fun validate_field/2 ) of
+                { [ Type, Login, Password ], [] } ->
+                    services:add_service( Info#users.login, Login, Password, Type ),
                     Pf = pfactory:new( A ),
                     { html, Pf:page( "setup", [
                                                { services, reformat_services( services:by_user( Info#users.login ) ) }
-                                              ] ) };
-                'POST' ->
-                    case rwc:validate( A, [
-                                           "account_type",
-                                           "acct_login",
-                                           "acct_password"
-                                          ], fun validate_field/2 ) of
-                        { [ Type, Login, Password ], [] } ->
-                            services:add_service( Info#users.login, Login, Password, Type ),
-                            Pf = pfactory:new( A ),
-                            { html, Pf:page( "setup", [
-                                                       { services, reformat_services( services:by_user( Info#users.login ) ) }
-                                                      ] ) }
-                    end
+                                              ] ) }
             end
     end.
 
+            
 validate_field( "account_type", _ ) ->
     ok;
 validate_field( "acct_login", Login ) when length( Login ) > 1 ->
@@ -127,7 +115,6 @@ validate_field( "svc", Line ) when length( Line ) > 1 ->
     ok;
 validate_field( "svc", _ ) ->
     { error, "Value is too short." }.
-
 
 rfmt( [], _Type ) ->
     [];
@@ -169,36 +156,28 @@ remove_non_twitter( [ Sv | Rst ] ) ->
     end.
 
 near_me( A ) ->
-    case rwc:auth_info( A ) of
-        false ->
-            { redirect, "/login" };
-        Vx ->
-            Key = Vx#users.login ++ "-loc",
-            case lwtc:keyd_lookup( Key ) of
-                { ok, Geocode } ->
-                    Px = pfactory:new( A ),
-                    case shift_to_twitter( services:by_user( Vx#users.login ) ) of
-                        [] ->
-                            { redirect, "/geo_setup" };
-                        Info ->
-                            { struct, List } = lwtc:near_me( Info#services.username, Info#services.password, Geocode ),
-                            { value, { <<"results">>, Messages } } = lists:keysearch( <<"results">>, 1, List ),
-                            { html, Px:page( "viewer", [ { twittermessages, sort_geo_messages( Messages ) } ] ) }
-                    end
+    Vx = rwc:auth_info( A ),
+    Key = Vx#users.login ++ "-loc",
+    case lwtc:keyd_lookup( Key ) of
+        { ok, Geocode } ->
+            Px = pfactory:new( A ),
+            case shift_to_twitter( services:by_user( Vx#users.login ) ) of
+                [] ->
+                    { redirect, "/geo_setup" };
+                Info ->
+                    { struct, List } = lwtc:near_me( Info#services.username, Info#services.password, Geocode ),
+                    { value, { <<"results">>, Messages } } = lists:keysearch( <<"results">>, 1, List ),
+                    { html, Px:page( "viewer", [ { twittermessages, sort_geo_messages( Messages ) } ] ) }
             end
     end.
 
 viewer_handler( A ) ->
-    case rwc:auth_info( A ) of
-        false ->
-            { redirect, "/u/login" };
-        Vx ->
-            Px = pfactory:new( A ),
-            All_Messages = rfmt( services:by_user( Vx#users.login ), replies ) ++
-                rfmt( services:by_user( Vx#users.login ), friends_timeline ) ++
-                rfmt( services:by_user( Vx#users.login ), direct_messages ),
-            { html, Px:page( "viewer", [ { twittermessages, lists:reverse( sort_messages( All_Messages ) ) } ] ) }
-    end.
+    Vx = rwc:auth_info( A ),
+    Px = pfactory:new( A ),
+    All_Messages = rfmt( services:by_user( Vx#users.login ), replies ) ++
+        rfmt( services:by_user( Vx#users.login ), friends_timeline ) ++
+        rfmt( services:by_user( Vx#users.login ), direct_messages ),
+    { html, Px:page( "viewer", [ { twittermessages, lists:reverse( sort_messages( All_Messages ) ) } ] ) }.
 
 pull_service_data( Login, Password, Service, Request ) ->
     Px = lwtc:nrequest( Login, Password, Service, Request ),
@@ -316,7 +295,7 @@ m_t_n( Month ) ->
 %
 urlize( Message, Service ) ->
     list_to_binary(
-      string:join( [ yoorl( X, Service ) || X <- string:tokens( binary_to_list(Message), " " ) ], " " )
+      string:join( [ un_punctuate( yoorl( X, Service ) ) || X <- string:tokens( binary_to_list(Message), " " ) ], " " )
      ).
 
 yoorl( X, Service ) ->
@@ -359,7 +338,7 @@ yoorl( X, Service ) ->
                     Urlized
             end;
         _ ->
-            un_punctuate( Urlized )
+            Urlized
     end.
 
 % Ah, much better than what was here before.
